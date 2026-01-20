@@ -1,22 +1,3 @@
-<<<<<<< HEAD
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Footer from "./components/Footer";
-
-function App() {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow">
-        <Home />
-      </main>
-      <Footer />
-    </div>
-  );
-}
-
-export default App;
-=======
 import './App.css';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -46,4 +27,3 @@ function App() {
 }
 
 export default App;
->>>>>>> b2a048f55670442899b60b4a7b9dc5a381715da5
