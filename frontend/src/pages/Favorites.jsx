@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import AccountLayout from "../components/AccountLayout";
 import { HeartIcon } from '@heroicons/react/24/outline';
+  
 
 const Favorites = () => {
+const navigate = useNavigate();
   return (
     <AccountLayout>
       {/* Banner */}
@@ -15,8 +18,10 @@ const Favorites = () => {
             <p className="text-gray-600 text-sm">Save your favorite stays to your account and create your own lists.</p>
           </div>
         </div>
-        <button className="whitespace-nowrap px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition">
-          Create account
+        <button
+        onClick={() => navigate("/login")}
+        className="whitespace-nowrap px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-blue-600 transition">
+          SignIn
         </button>
       </div>
 

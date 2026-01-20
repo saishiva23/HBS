@@ -2,6 +2,31 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+// Mock API and Auth (Temporary fix)
+const authAPI = {
+  login: async (credentials) => {
+    console.log("Login with:", credentials);
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                data: {
+                    data: {
+                        user: { role: 'user', name: 'Test User' },
+                        token: 'fake-token-123'
+                    }
+                }
+            });
+        }, 1000);
+    });
+  }
+};
+
+const setAuth = (user, token) => {
+    console.log("Auth Set:", user, token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+};
+
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

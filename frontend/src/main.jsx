@@ -8,11 +8,10 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-
-
+import { BrowserRouter } from 'react-router-dom';
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
 )

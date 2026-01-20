@@ -2,6 +2,31 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+// Mock API and Auth (Temporary fix)
+const authAPI = {
+  register: async (data) => {
+    console.log("Register with:", data);
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({
+                data: {
+                    data: {
+                        user: { ...data, role: 'user' },
+                        token: 'fake-token-456'
+                    }
+                }
+            });
+        }, 1000);
+    });
+  }
+};
+
+const setAuth = (user, token) => {
+    console.log("Auth Set:", user, token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+};
+
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
         first_name: '',

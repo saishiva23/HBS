@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import AccountLayout from "../components/AccountLayout";
 import { FaBell } from "react-icons/fa";
 
 const Help = () => {
+  const navigate = useNavigate();
   return (
     <AccountLayout>
       <h1 className="text-3xl font-bold mb-4">Help and support</h1>
@@ -18,7 +20,9 @@ const Help = () => {
         </div>
 
         <div className="flex gap-4">
-          <button className="border px-6 py-2 rounded-lg font-semibold hover:bg-gray-50">
+          <button 
+          onClick={() => navigate("/login")}
+          className="border px-6 py-2 rounded-lg font-semibold hover:bg-gray-50">
             Sign in or create account
           </button>
           <button className="border px-6 py-2 rounded-lg font-semibold hover:bg-gray-50">
