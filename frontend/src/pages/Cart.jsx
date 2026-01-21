@@ -17,11 +17,13 @@ const Cart = () => {
     const updated = cartItems.filter((_, i) => i !== index);
     setCartItems(updated);
     localStorage.setItem("hotelCart", JSON.stringify(updated));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   const clearCart = () => {
     setCartItems([]);
     localStorage.removeItem("hotelCart");
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price, 0);

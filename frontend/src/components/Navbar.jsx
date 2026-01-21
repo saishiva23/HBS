@@ -32,7 +32,7 @@ const Navbar = () => {
 
     // Listen for storage changes (from other tabs or components)
     window.addEventListener("storage", updateCartCount);
-    
+
     // Custom event listener for same-tab updates
     window.addEventListener("cartUpdated", updateCartCount);
 
@@ -96,18 +96,20 @@ const Navbar = () => {
             )}
           </button>
 
-          {/* Cart Icon */}
-          <Link
-            to="/cart"
-            className="relative flex items-center gap-2 border border-yellow-400 rounded-xl px-4 py-2 hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors dark:text-white"
-          >
-            <ShoppingCartIcon className="h-5 w-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                {cartCount > 9 ? "9+" : cartCount}
-              </span>
-            )}
-          </Link>
+          {/* Cart Icon - Only show when authenticated */}
+          {isAuthenticated && (
+            <Link
+              to="/cart"
+              className="relative flex items-center gap-2 border border-yellow-400 rounded-xl px-4 py-2 hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors dark:text-white"
+            >
+              <ShoppingCartIcon className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* User Avatar / Sign In Button */}
           <div ref={menuRef} className="relative">

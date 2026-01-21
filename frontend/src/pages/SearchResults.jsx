@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { HeartIcon, MapPinIcon, ShoppingCartIcon } from "@heroicons/react/24/solid";
 import { CheckCircleIcon } from "@heroicons/react/24/outline";
 import SearchBar from "../components/SearchBar";
@@ -330,18 +331,17 @@ const useQuery = () => {
 };
 
 const FilterChip = ({ children, active }) => (
-  <button className={`px-3 py-2 border dark:border-gray-700 rounded-full text-sm transition ${
-    active 
-      ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500' 
+  <button className={`px-3 py-2 border dark:border-gray-700 rounded-full text-sm transition ${active
+      ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500'
       : 'bg-white dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-  }`}>
+    }`}>
     {children}
   </button>
 );
 
 const ResultCard = ({ item, onAddToCart }) => {
   const discount = Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100);
-  
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 shadow-sm p-4 flex gap-4 hover:shadow-md transition-colors">
       <div className="relative">
@@ -368,7 +368,7 @@ const ResultCard = ({ item, onAddToCart }) => {
               <span>{item.distance}</span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">{item.roomType}</p>
-            
+
             <div className="mt-2 flex items-center gap-2">
               <span className="px-2 py-1 bg-green-600 text-white rounded-md text-sm font-bold">
                 {item.ratingScore}
@@ -376,12 +376,12 @@ const ResultCard = ({ item, onAddToCart }) => {
               <span className="font-semibold dark:text-white">{item.ratingText}</span>
               <span className="text-gray-500 dark:text-gray-400 text-sm">({item.ratingCount.toLocaleString()} ratings)</span>
             </div>
-            
+
             <div className="mt-2 flex items-center gap-2">
               <CheckCircleIcon className="h-4 w-4 text-green-600 dark:text-green-500" />
               <span className="text-sm text-green-700 dark:text-green-400 font-medium">{item.meals}</span>
             </div>
-            
+
             <div className="mt-2 flex flex-wrap gap-2">
               {item.amenities.slice(0, 4).map((amenity) => (
                 <span key={amenity} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
@@ -390,7 +390,7 @@ const ResultCard = ({ item, onAddToCart }) => {
               ))}
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 w-48 text-right ml-4 transition-colors">
             <p className="text-sm text-gray-500 dark:text-gray-400 line-through">{currency(item.originalPrice)}</p>
             <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{currency(item.price)}</p>
@@ -412,7 +412,9 @@ const ResultCard = ({ item, onAddToCart }) => {
 
 const SearchResults = () => {
   const q = useQuery();
-  
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
   const initialValues = {
     destination: q.get("destination") || "",
     adults: q.get("adults"),
@@ -424,20 +426,25 @@ const SearchResults = () => {
   };
 
   const destination = initialValues.destination.toLowerCase().trim();
-  
+
   // Filter results by city or state name - using mockHotels from data file
   const filteredResults = destination
     ? mockHotels.filter(
-        (hotel) =>
-          hotel.city.toLowerCase().includes(destination) ||
-          hotel.state.toLowerCase().includes(destination)
-      )
+      (hotel) =>
+        hotel.city.toLowerCase().includes(destination) ||
+        hotel.state.toLowerCase().includes(destination)
+    )
     : mockHotels;
 
   const handleAddToCart = (hotel) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
     // Add to recently viewed
     addToRecentlyViewed(hotel.id);
-    
+
     // Create booking details
     const bookingDetails = {
       hotel: hotel.name,
@@ -448,15 +455,15 @@ const SearchResults = () => {
       guests: initialValues.adults || "2",
       rooms: initialValues.rooms || "1",
     };
-    
+
     // Store in localStorage for now (can be upgraded to context/Redux later)
     const existingCart = JSON.parse(localStorage.getItem("hotelCart") || "[]");
     existingCart.push(bookingDetails);
     localStorage.setItem("hotelCart", JSON.stringify(existingCart));
-    
+
     // Dispatch custom event to update navbar cart count
     window.dispatchEvent(new Event("cartUpdated"));
-    
+
     alert(`${hotel.name} added to cart!\n\nRoom: ${hotel.roomType}\nPrice: ₹${hotel.price.toLocaleString()} per night`);
   };
 
