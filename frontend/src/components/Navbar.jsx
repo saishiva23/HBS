@@ -63,8 +63,9 @@ const Navbar = () => {
   }, []);
 
   return (
-    <nav className="w-full bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm transition-colors duration-300">
-      <div className="w-full flex items-center justify-between h-20 px-4 md:px-12">
+
+    <nav className="w-full fixed top-0 left-0 z-50 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm transition-colors duration-300">
+      <div className="max-w-7xl mx-auto flex items-center justify-between h-20 px-4 md:px-8">
 
         {/* Logo */}
         <Link to="/" className="flex items-center h-full">

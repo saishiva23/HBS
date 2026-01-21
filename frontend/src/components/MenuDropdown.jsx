@@ -30,7 +30,7 @@ const MenuDropdown = ({ open, onClose }) => {
   // Menu for logged-in users (Trivago style)
   if (isAuthenticated) {
     return (
-      <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl border z-50 py-4 overflow-hidden">
+      <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border dark:border-gray-700 z-50 py-4 overflow-hidden transition-colors">
 
         {/* Account Section */}
         <MenuSection title="Account">
@@ -118,7 +118,7 @@ const MenuDropdown = ({ open, onClose }) => {
 
   // Menu for non-logged-in users (original)
   return (
-    <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl border z-50 p-4">
+    <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border dark:border-gray-700 z-50 p-4 transition-colors">
 
       <MenuSection title="Trips">
         <MenuItem icon={HeartIcon} label="Favorites" to="/favorites" onClick={onClose} />

@@ -3,7 +3,7 @@ import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
 const Footer = () => {
     return (
         <footer className="bg-gray-900 text-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-24 py-12">
                 <div className="grid md:grid-cols-4 gap-8">
                     <div>
                         <h3 className="font-bold text-xl mb-4">HotelBook</h3>

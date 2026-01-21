@@ -98,7 +98,7 @@ const SearchBar = ({ initialValues }) => {
   }, []);
 
   return (
-    <div className="relative mt-10">
+    <div className="relative mt-0">
 
       {/* Search Bar */}
       <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl border dark:border-gray-700 overflow-hidden flex flex-col md:flex-row transition-colors">
@@ -257,7 +257,7 @@ const SearchBar = ({ initialValues }) => {
             });
             navigate(`/search?${params.toString()}`);
           }}
-          className={`bg-blue-600 hover:bg-blue-700 transition text-white font-semibold text-lg px-10 py-3 rounded-xl mx-4 my-3 shadow-md ${
+          className={`bg-blue-600 hover:bg-blue-700 transition text-white font-semibold text-lg px-10 py-3 rounded-xl shadow-md ${
             !destination.trim() ? "opacity-50 cursor-not-allowed" : ""
           }`}
           disabled={!destination.trim()}

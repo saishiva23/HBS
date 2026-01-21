@@ -461,8 +461,8 @@ const SearchResults = () => {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 py-8">
-      <div className="mb-8 -mt-10">
+    <div className="max-w-7xl mx-auto px-4 py-8 pt-28">
+      <div className="mb-8">
         <SearchBar initialValues={initialValues} />
       </div>
 

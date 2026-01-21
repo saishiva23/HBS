@@ -27,7 +27,7 @@ const Cart = () => {
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <div className="max-w-[900px] mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 pt-28">
       <div className="flex items-center gap-3 mb-8">
         <ShoppingCartIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
         <h1 className="text-3xl font-bold dark:text-white transition-colors">Your Cart</h1>
