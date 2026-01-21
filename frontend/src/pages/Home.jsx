@@ -1,6 +1,7 @@
 import SearchBar from "../components/SearchBar";
 import Footer from './../components/Footer';
 import { FaSearch, FaCalendar, FaUsers, FaHotel, FaCreditCard, FaStar } from 'react-icons/fa';
+import PopularSearches from "../components/PopularSearches";
 
 
 function Home() {
@@ -17,6 +18,7 @@ function Home() {
       </p> */}
 
       <SearchBar />
+      <PopularSearches />
       {/* How It Works */}
       <div className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

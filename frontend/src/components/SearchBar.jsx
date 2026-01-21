@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DateRange } from "react-date-range";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import {
   MagnifyingGlassIcon,
   CalendarIcon,
@@ -13,21 +14,35 @@ import {
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
-const SearchBar = () => {
+const SearchBar = ({ initialValues }) => {
+  // Helper to parse dates like "21 Jan"
+  const parseDate = (dateStr) => {
+    if (!dateStr) return new Date();
+    const currentYear = new Date().getFullYear();
+    const d = new Date(`${dateStr} ${currentYear}`);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
   const [openCalendar, setOpenCalendar] = useState(false);
   const [openGuests, setOpenGuests] = useState(false);
+  const [destination, setDestination] = useState(initialValues?.destination || "");
 
   const calendarRef = useRef(null);
   const guestsRef = useRef(null);
+  const navigate = useNavigate();
 
   const [dateRange, setDateRange] = useState([
-    { startDate: new Date(), endDate: new Date(), key: "selection" },
+    {
+      startDate: initialValues?.start ? parseDate(initialValues.start) : new Date(),
+      endDate: initialValues?.end ? parseDate(initialValues.end) : new Date(),
+      key: "selection",
+    },
   ]);
 
-  const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
-  const [rooms, setRooms] = useState(1);
-  const [petsAllowed, setPetsAllowed] = useState(false);
+  const [adults, setAdults] = useState(Number(initialValues?.adults) || 2);
+  const [children, setChildren] = useState(Number(initialValues?.children) || 0);
+  const [rooms, setRooms] = useState(Number(initialValues?.rooms) || 1);
+  const [petsAllowed, setPetsAllowed] = useState(initialValues?.pets === "true" || false);
     
   // Outside click handler
     useEffect(() => {
@@ -69,11 +84,26 @@ const SearchBar = () => {
         <div className="flex items-center gap-4 px-6 py-4 flex-1 border-b md:border-b-0 md:border-r">
           <MagnifyingGlassIcon className="h-6 w-6 text-gray-500" />
           <div className="w-full">
-            <p className="text-xs text-gray-500">Destination</p>
             <input
               type="text"
-              placeholder="Where to?"
+              placeholder="Destination"
               className="outline-none font-semibold text-lg w-full"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && destination.trim()) {
+                  const params = new URLSearchParams({
+                    destination: destination,
+                    adults: String(adults),
+                    children: String(children),
+                    rooms: String(rooms),
+                    start: format(dateRange[0].startDate, "dd MMM"),
+                    end: format(dateRange[0].endDate, "dd MMM"),
+                    pets: String(petsAllowed),
+                  });
+                  navigate(`/search?${params.toString()}`);
+                }
+              }}
             />
           </div>
         </div>
@@ -102,24 +132,38 @@ const SearchBar = () => {
             ref={calendarRef}
             className="absolute z-50 mt-4 left-0 bg-white shadow-2xl rounded-xl p-4"
           >
-          <div className="flex justify-end mb-2">
-          <button
-            onClick={() => setOpenCalendar(false)}
-            className="p-1 rounded-full hover:bg-gray-100"
-          >
-            X
-          </button>
-        </div>
-
             <DateRange
               editableDateInputs={true}
-              onChange={(item) => setDateRange([item.selection])}
+              onChange={(item) => {
+                const sel = item.selection;
+                const start = sel.startDate;
+                const end =
+                  sel.endDate && sel.endDate >= sel.startDate
+                    ? sel.endDate
+                    : sel.startDate;
+                setDateRange([{ startDate: start, endDate: end, key: "selection" }]);
+              }}
               moveRangeOnFirstSelection={false}
               ranges={dateRange}
               months={2}
               direction="horizontal"
               className="rounded-lg"
+              minDate={new Date()}
             />
+            <div className="flex justify-end gap-2 mt-3">
+              <button
+                onClick={() => setOpenCalendar(false)}
+                className="px-4 py-2 border rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setOpenCalendar(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold"
+              >
+                Apply
+              </button>
+            </div>
           </div>
         )}
 
@@ -143,9 +187,32 @@ const SearchBar = () => {
         </div>
 
         {/* Search Button */}
-       <button className="bg-blue-600 hover:bg-blue-700 transition text-white font-semibold text-lg px-10 py-3 rounded-xl mx-4 my-3 shadow-md">
-        Search
-      </button>
+        {/* Search Button */}
+        <button
+          onClick={() => {
+            if (!destination.trim()) {
+              // You might want to show a toast or highlight the input
+              // For now we just return
+              return;
+            }
+            const params = new URLSearchParams({
+              destination: destination,
+              adults: String(adults),
+              children: String(children),
+              rooms: String(rooms),
+              start: format(dateRange[0].startDate, "dd MMM"),
+              end: format(dateRange[0].endDate, "dd MMM"),
+              pets: String(petsAllowed),
+            });
+            navigate(`/search?${params.toString()}`);
+          }}
+          className={`bg-blue-600 hover:bg-blue-700 transition text-white font-semibold text-lg px-10 py-3 rounded-xl mx-4 my-3 shadow-md ${
+            !destination.trim() ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          disabled={!destination.trim()}
+        >
+          Search
+        </button>
 
       </div>
 

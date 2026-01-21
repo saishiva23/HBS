@@ -10,6 +10,8 @@ import RecentlyViewed from './pages/RecentlyViewed';
 import Bookings from './pages/Bookings';
 import Help from './pages/Help';
 import Hoteliers from './pages/Hoteliers';
+import SearchResults from './pages/SearchResults';
+import Cart from './pages/Cart';
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/help" element={<Help />} />
           <Route path="/hoteliers" element={<Hoteliers />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </main>
       <Footer />
@@ -33,3 +37,4 @@ function App() {
 }
 
 export default App;
+

@@ -3,6 +3,7 @@ import {
   GlobeAltIcon,
   UserCircleIcon,
   Bars3Icon,
+  ShoppingCartIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
@@ -10,8 +11,30 @@ import MenuDropdown from "./MenuDropdown";
 
 const Navbar = () => {
   const [openMenu, setOpenMenu] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+
+  // Update cart count on mount and when localStorage changes
+  useEffect(() => {
+    const updateCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem("hotelCart") || "[]");
+      setCartCount(cart.length);
+    };
+
+    updateCartCount();
+
+    // Listen for storage changes (from other tabs or components)
+    window.addEventListener("storage", updateCartCount);
+    
+    // Custom event listener for same-tab updates
+    window.addEventListener("cartUpdated", updateCartCount);
+
+    return () => {
+      window.removeEventListener("storage", updateCartCount);
+      window.removeEventListener("cartUpdated", updateCartCount);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -45,6 +68,19 @@ const Navbar = () => {
             EN · ₹
           </button>
 
+          {/* Cart Icon */}
+          <Link
+            to="/cart"
+            className="relative flex items-center gap-2 border border-yellow-400 rounded-xl px-4 py-2 hover:bg-yellow-50"
+          >
+            <ShoppingCartIcon className="h-5 w-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            )}
+          </Link>
+
           <button 
             onClick={() => navigate("/login")}
             className="flex items-center gap-2 border border-yellow-400 rounded-xl px-5 py-2 font-semibold hover:bg-yellow-50"
@@ -72,3 +108,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
