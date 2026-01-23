@@ -25,7 +25,7 @@ const LoginPage = () => {
                 // Role-based redirect
                 if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'hotel_admin') {
                     toast.success(`Welcome back, ${user.name}!`);
-                    navigate('/admin');
+                    navigate('/admin/dashboard');
                 } else {
                     toast.success(`Welcome back, ${user.name}!`);
                     navigate('/');

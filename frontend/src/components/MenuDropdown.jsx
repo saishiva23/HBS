@@ -8,8 +8,6 @@ import {
   HeartIcon,
   ClockIcon,
   BriefcaseIcon,
-  MagnifyingGlassIcon,
-  BellIcon,
   QuestionMarkCircleIcon,
   BuildingOfficeIcon,
   ArrowRightOnRectangleIcon,
@@ -70,23 +68,7 @@ const MenuDropdown = ({ open, onClose }) => {
           />
         </MenuSection>
 
-        {/* Preferences Section */}
-        <MenuSection title="Preferences">
-          <MenuItem
-            icon={MagnifyingGlassIcon}
-            label="Search preferences"
-            to="/preferences/search"
-            onClick={onClose}
-          />
-          <MenuItem
-            icon={BellIcon}
-            label="Notifications"
-            to="/preferences/notifications"
-            onClick={onClose}
-          />
-        </MenuSection>
 
-        {/* Support Section */}
         <MenuSection title="Support">
           <MenuItem
             icon={QuestionMarkCircleIcon}
@@ -96,8 +78,8 @@ const MenuDropdown = ({ open, onClose }) => {
           />
           <MenuItem
             icon={BuildingOfficeIcon}
-            label="stays.in for hoteliers"
-            to="/hoteliers"
+            label={user?.role === 'admin' ? "Admin Dashboard" : "List your property"}
+            to={user?.role === 'admin' ? "/admin/dashboard" : "/hoteliers"}
             onClick={onClose}
           />
         </MenuSection>
@@ -128,7 +110,12 @@ const MenuDropdown = ({ open, onClose }) => {
 
       <MenuSection title="Support">
         <MenuItem icon={QuestionMarkCircleIcon} label="Help and support" to="/help" onClick={onClose} />
-        <MenuItem icon={BuildingOfficeIcon} label="Hoteliers/Admin" to="/hoteliers" onClick={onClose} />
+        <MenuItem
+          icon={BuildingOfficeIcon}
+          label="List your property"
+          to="/hoteliers"
+          onClick={onClose}
+        />
       </MenuSection>
 
     </div>

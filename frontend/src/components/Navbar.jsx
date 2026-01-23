@@ -112,9 +112,9 @@ const Navbar = () => {
           )}
 
           {/* User Avatar / Sign In Button */}
-          <div ref={menuRef} className="relative">
-            {isAuthenticated ? (
-              /* Logged In - Show User Avatar with Initial */
+          {isAuthenticated ? (
+            <div ref={menuRef} className="relative">
+              {/* Logged In - Show User Avatar with Initial */}
               <button
                 onClick={() => setOpenMenu(!openMenu)}
                 className="flex items-center gap-2 group"
@@ -124,26 +124,23 @@ const Navbar = () => {
                   {getUserInitials()}
                 </div>
               </button>
-            ) : (
-              /* Not Logged In - Show Sign In Button */
-              <button
-                onClick={() => navigate("/login")}
-                className="flex items-center gap-2 border border-yellow-400 rounded-xl px-5 py-2 font-semibold hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors dark:text-white"
-              >
-                <UserCircleIcon className="h-5 w-5" />
-                Sign in
-              </button>
-            )}
 
-            {/* Dropdown Menu - Only shows when authenticated and clicked on avatar */}
-            {isAuthenticated && (
+              {/* Dropdown Menu for authenticated users */}
               <MenuDropdown open={openMenu} onClose={() => setOpenMenu(false)} />
-            )}
-          </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="flex items-center gap-2 border border-yellow-400 rounded-xl px-5 py-2 font-semibold hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors dark:text-white"
+            >
+              <UserCircleIcon className="h-5 w-5" />
+              Sign in
+            </button>
+          )}
 
           {/* Menu Button - Only show if NOT authenticated */}
           {!isAuthenticated && (
-            <div className="relative">
+            <div ref={menuRef} className="relative">
               <button
                 onClick={() => setOpenMenu(!openMenu)}
                 className="flex items-center gap-2 border border-yellow-400 rounded-xl px-5 py-2 hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors dark:text-white"
@@ -153,6 +150,7 @@ const Navbar = () => {
                 </svg>
                 Menu
               </button>
+              {/* Dropdown Menu for non-authenticated users */}
               <MenuDropdown open={openMenu} onClose={() => setOpenMenu(false)} />
             </div>
           )}
