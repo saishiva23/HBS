@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronRightIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { getHotelById } from "../data/mockData";
+import { useReviews } from "../context/ReviewsContext";
+import { FaStar } from "react-icons/fa";
 
 const currency = (v) =>
   new Intl.NumberFormat("en-IN", {
@@ -10,7 +12,7 @@ const currency = (v) =>
     maximumFractionDigits: 0,
   }).format(v);
 
-const HotelCard = ({ hotel, onClick }) => {
+const HotelCard = ({ hotel, onClick, userRating }) => {
   const discount = Math.round(((hotel.originalPrice - hotel.price) / hotel.originalPrice) * 100);
   
   return (
@@ -35,9 +37,17 @@ const HotelCard = ({ hotel, onClick }) => {
         <p className="text-gray-600 dark:text-gray-400 text-sm">{hotel.city}, {hotel.state}</p>
         <div className="flex items-center gap-2 mt-2">
           <span className="px-2 py-0.5 bg-green-600 text-white rounded text-xs font-bold">
-            {hotel.ratingScore}
+            {userRating ? userRating.score : hotel.ratingScore}
           </span>
-          <span className="text-sm text-gray-600 dark:text-gray-400">{hotel.ratingText}</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {userRating ? userRating.text : hotel.ratingText}
+          </span>
+          {userRating && (
+            <span className="flex items-center gap-1 text-xs text-yellow-500">
+              <FaStar className="h-3 w-3" />
+              {userRating.count} review{userRating.count !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="text-gray-400 text-sm line-through">{currency(hotel.originalPrice)}</span>
@@ -49,10 +59,12 @@ const HotelCard = ({ hotel, onClick }) => {
   );
 };
 
+
 const RecentlyViewedHotels = () => {
   const [recentHotels, setRecentHotels] = useState([]);
   const scrollerRef = useRef(null);
   const navigate = useNavigate();
+  const { getHotelRating } = useReviews();
 
   useEffect(() => {
     const loadRecentlyViewed = () => {
@@ -69,10 +81,12 @@ const RecentlyViewedHotels = () => {
     // Listen for updates
     window.addEventListener("hotelViewed", loadRecentlyViewed);
     window.addEventListener("storage", loadRecentlyViewed);
+    window.addEventListener("reviewAdded", loadRecentlyViewed);
 
     return () => {
       window.removeEventListener("hotelViewed", loadRecentlyViewed);
       window.removeEventListener("storage", loadRecentlyViewed);
+      window.removeEventListener("reviewAdded", loadRecentlyViewed);
     };
   }, []);
 
@@ -110,6 +124,7 @@ const RecentlyViewedHotels = () => {
               key={hotel.id}
               hotel={hotel}
               onClick={() => handleHotelClick(hotel)}
+              userRating={getHotelRating(hotel.id)}
             />
           ))}
         </div>
