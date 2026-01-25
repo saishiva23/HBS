@@ -11,8 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../context/AuthContext";
 
-const currency = (v) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
+import { calculateNights, currency } from "../utils/bookingUtils";
 
 const Checkout = () => {
   const navigate = useNavigate();

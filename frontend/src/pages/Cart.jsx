@@ -11,9 +11,8 @@ import {
   XMarkIcon,
   CheckIcon
 } from "@heroicons/react/24/outline";
-
-const currency = (v) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
+import { mockHotels } from "../data/mockData";
+import { calculateNights, currency, getCappedPrice } from "../utils/bookingUtils";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -23,11 +22,47 @@ const Cart = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editForm, setEditForm] = useState({});
 
-  // Sync with localStorage changes
+  // Helper to get base price safely with capping rule
+  const getBasePrice = (item) => {
+    const hotel = mockHotels.find(h => h.name === item.hotel);
+    const mockRef = hotel ? hotel.price : 0;
+    
+    let currentBase = item.basePrice;
+    if (!currentBase || currentBase > 10000000) {
+      currentBase = mockRef || (item.price / (item.rooms || 1) / (item.nights || 1));
+    }
+    
+    return getCappedPrice(item.hotel, currentBase);
+  };
+
+  // Sync with localStorage changes and sanitize initial data
   useEffect(() => {
-    const handleStorageChange = () => {
-      setCartItems(JSON.parse(localStorage.getItem("hotelCart") || "[]"));
+    const sanitize = (items) => {
+      return items.map(item => {
+        const basePrice = getBasePrice(item);
+        const nights = calculateNights(item.checkIn, item.checkOut);
+        const rooms = item.rooms || 1;
+        return {
+          ...item,
+          basePrice: basePrice,
+          price: basePrice * rooms * nights
+        };
+      });
     };
+
+    const handleStorageChange = () => {
+      const stored = JSON.parse(localStorage.getItem("hotelCart") || "[]");
+      setCartItems(sanitize(stored));
+    };
+
+    // Initial sanitization
+    const initial = JSON.parse(localStorage.getItem("hotelCart") || "[]");
+    const sanitized = sanitize(initial);
+    if (JSON.stringify(initial) !== JSON.stringify(sanitized)) {
+      setCartItems(sanitized);
+      localStorage.setItem("hotelCart", JSON.stringify(sanitized));
+    }
+
     window.addEventListener("cartUpdated", handleStorageChange);
     return () => window.removeEventListener("cartUpdated", handleStorageChange);
   }, []);
@@ -66,27 +101,50 @@ const Cart = () => {
 
   // Save edited item
   const saveEdit = (index) => {
-    const updated = [...cartItems];
-    updated[index] = {
-      ...updated[index],
-      guests: editForm.guests,
-      rooms: editForm.rooms,
-      checkIn: editForm.checkIn,
-      checkOut: editForm.checkOut,
-      price: updated[index].basePrice * editForm.rooms // Recalculate price
-    };
+    const item = cartItems[index];
+    const nights = calculateNights(editForm.checkIn, editForm.checkOut);
+    const basePrice = getBasePrice(item);
+    
+    const updated = cartItems.map((cartItem, i) => {
+      if (i === index) {
+        return {
+          ...cartItem,
+          guests: editForm.guests,
+          rooms: editForm.rooms,
+          checkIn: editForm.checkIn,
+          checkOut: editForm.checkOut,
+          nights: nights,
+          basePrice: basePrice,
+          price: basePrice * editForm.rooms * nights
+        };
+      }
+      return cartItem;
+    });
+
     setCartItems(updated);
     localStorage.setItem("hotelCart", JSON.stringify(updated));
     window.dispatchEvent(new Event("cartUpdated"));
     setEditingIndex(null);
   };
 
-  // Update room quantity
   const updateRooms = (index, delta) => {
-    const updated = [...cartItems];
-    const newRooms = Math.max(1, Math.min(10, (updated[index].rooms || 1) + delta));
-    updated[index].rooms = newRooms;
-    updated[index].price = (updated[index].basePrice || updated[index].price) * newRooms;
+    const item = cartItems[index];
+    const newRooms = Math.max(1, Math.min(10, (item.rooms || 1) + delta));
+    const nights = calculateNights(item.checkIn, item.checkOut);
+    const basePrice = getBasePrice(item);
+    
+    const updated = cartItems.map((cartItem, i) => {
+      if (i === index) {
+        return {
+          ...cartItem,
+          rooms: newRooms,
+          basePrice: basePrice,
+          price: basePrice * newRooms * nights
+        };
+      }
+      return cartItem;
+    });
+
     setCartItems(updated);
     localStorage.setItem("hotelCart", JSON.stringify(updated));
     window.dispatchEvent(new Event("cartUpdated"));
@@ -267,6 +325,9 @@ const Cart = () => {
                               <UserGroupIcon className="h-4 w-4" />
                               {item.guests} Guest{item.guests !== 1 ? 's' : ''}
                             </span>
+                            <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded text-blue-700 dark:text-blue-300 font-medium">
+                              {item.nights || 1} Night{ (item.nights || 1) !== 1 ? 's' : ''}
+                            </span>
                           </div>
 
                           {/* Room Quantity Controls */}
@@ -293,7 +354,7 @@ const Cart = () => {
                             </div>
                             <div className="text-right">
                               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{currency(item.price)}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">per night</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">total stay</p>
                             </div>
                           </div>
                         </>

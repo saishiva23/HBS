@@ -20,9 +20,8 @@ import HotelierDashboard from './pages/admin/HotelierDashboard';
 import HotelProfileManagement from './pages/admin/HotelProfileManagement';
 import RoomManagement from './pages/admin/RoomManagement';
 import BookingManagement from './pages/admin/BookingManagement';
-import PricingAvailability from './pages/admin/PricingAvailability';
-import ReviewsManagement from './pages/admin/ReviewsManagement';
-import RevenueReports from './pages/admin/RevenueReports';
+import CustomerExperience from './pages/admin/CustomerExperience';
+import PaymentsManagement from './pages/admin/PaymentsManagement';
 import HotelierSettings from './pages/admin/HotelierSettings';
 import RoomTypeManagement from './pages/admin/RoomTypeManagement';
 import HotelOwnerCRUD from './pages/admin/HotelOwnerCRUD';
@@ -35,50 +34,52 @@ import SystemAnalytics from './pages/admin/SystemAnalytics';
 
 // Context Providers
 import { HotelProvider } from './context/HotelContext';
+import { ReviewsProvider } from './context/ReviewsContext';
 
 function App() {
   return (
     <HotelProvider>
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-        <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            {/* User Pages */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/favorites" element={<Favorites />} />
-            <Route path="/recent" element={<RecentlyViewed />} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/hoteliers" element={<Hoteliers />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/checkout" element={<Checkout />} />
+        <ReviewsProvider>
+          <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                {/* User Pages */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/recent" element={<RecentlyViewed />} />
+                <Route path="/bookings" element={<Bookings />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/hoteliers" element={<Hoteliers />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/checkout" element={<Checkout />} />
 
-            {/* Owner Pages (Hotel Owners) */}
-            <Route path="/owner/dashboard" element={<HotelierDashboard />} />
-            <Route path="/owner/hotel-profile" element={<HotelProfileManagement />} />
-            <Route path="/owner/rooms" element={<RoomManagement />} />
-            <Route path="/owner/bookings" element={<BookingManagement />} />
-            <Route path="/owner/pricing" element={<PricingAvailability />} />
-            <Route path="/owner/reviews" element={<ReviewsManagement />} />
-            <Route path="/owner/revenue" element={<RevenueReports />} />
-            <Route path="/owner/settings" element={<HotelierSettings />} />
-            <Route path="/owner/my-hotels" element={<HotelOwnerCRUD />} />
-            <Route path="/owner/room-types" element={<RoomTypeManagement />} />
+                {/* Owner Pages (Hotel Owners) */}
+                <Route path="/owner/dashboard" element={<HotelierDashboard />} />
+                <Route path="/owner/hotel-profile" element={<HotelProfileManagement />} />
+                <Route path="/owner/rooms" element={<RoomManagement />} />
+                <Route path="/owner/bookings" element={<BookingManagement />} />
+                <Route path="/owner/experience" element={<CustomerExperience />} />
+                <Route path="/owner/payments" element={<PaymentsManagement />} />
+                <Route path="/owner/settings" element={<HotelierSettings />} />
+                <Route path="/owner/my-hotels" element={<HotelOwnerCRUD />} />
+                <Route path="/owner/room-types" element={<RoomTypeManagement />} />
 
-            {/* Admin Pages (Site Admins) */}
-            <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
-            <Route path="/admin/approvals" element={<HotelApprovals />} />
-            <Route path="/admin/customers" element={<CustomerManagement />} />
-            <Route path="/admin/hotels" element={<HotelOwnerCRUD />} />
-            <Route path="/admin/analytics" element={<SystemAnalytics />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+                {/* Admin Pages (Site Admins) */}
+                <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
+                <Route path="/admin/approvals" element={<HotelApprovals />} />
+                <Route path="/admin/customers" element={<CustomerManagement />} />
+                <Route path="/admin/hotels" element={<HotelOwnerCRUD />} />
+                <Route path="/admin/analytics" element={<SystemAnalytics />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </ReviewsProvider>
     </HotelProvider>
   );
 }

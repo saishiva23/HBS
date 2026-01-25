@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import OwnerLayout from '../../layouts/OwnerLayout';
 import {
     FaChartBar,
@@ -21,27 +22,23 @@ const HotelierDashboard = () => {
         {
             label: 'Total Bookings',
             value: '342',
-            change: '+8.2%',
-            trend: 'up',
             icon: FaCalendarAlt,
             gradient: 'from-blue-500 to-indigo-600',
         },
         {
             label: 'Occupancy Rate',
             value: '78%',
-            change: '-3.1%',
-            trend: 'down',
             icon: FaHotel,
             gradient: 'from-purple-500 to-pink-600',
         },
     ];
 
     const recentBookings = [
-        { id: 1, guest: 'John Smith', room: 'Deluxe Suite', checkIn: '2026-01-22', amount: '$450', status: 'Confirmed' },
-        { id: 2, guest: 'Emma Johnson', room: 'Standard Room', checkIn: '2026-01-23', amount: '$220', status: 'Pending' },
-        { id: 3, guest: 'Michael Brown', room: 'Premium Suite', checkIn: '2026-01-24', amount: '$680', status: 'Confirmed' },
-        { id: 4, guest: 'Sarah Davis', room: 'Family Room', checkIn: '2026-01-25', amount: '$390', status: 'Confirmed' },
-        { id: 5, guest: 'David Wilson', room: 'Executive Suite', checkIn: '2026-01-26', amount: '$850', status: 'Pending' },
+        { id: 1, guest: 'John Smith', room: 'Deluxe', checkIn: '2026-01-22', status: 'Confirmed' },
+        { id: 2, guest: 'Emma Johnson', room: 'Standard', checkIn: '2026-01-23', status: 'Pending' },
+        { id: 3, guest: 'Michael Brown', room: 'Standard AC', checkIn: '2026-01-24', status: 'Confirmed' },
+        { id: 4, guest: 'Sarah Davis', room: 'Standard', checkIn: '2026-01-25', status: 'Confirmed' },
+        { id: 5, guest: 'David Wilson', room: 'Deluxe', checkIn: '2026-01-26', status: 'Pending' },
     ];
 
     const upcomingTasks = [
@@ -115,19 +112,12 @@ const HotelierDashboard = () => {
                                     {/* Gradient Background */}
                                     <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.gradient} opacity-10 rounded-full blur-2xl`}></div>
 
-                                    <div className="relative z-10">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
-                                                <Icon className="h-6 w-6 text-white" />
-                                            </div>
-                                            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${stat.trend === 'up' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                }`}>
-                                                <TrendIcon className="h-4 w-4" />
-                                                <span className="text-sm font-semibold">{stat.change}</span>
-                                            </div>
+                                    <div className="relative z-10 text-center">
+                                        <div className={`p-4 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg inline-block mb-4`}>
+                                            <Icon className="h-8 w-8 text-white" />
                                         </div>
-                                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{stat.label}</p>
-                                        <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                                        <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">{stat.label}</p>
+                                        <p className="text-4xl font-black text-gray-900 dark:text-whiteTracking-tight">{stat.value}</p>
                                     </div>
                                 </div>
                             );
@@ -142,14 +132,20 @@ const HotelierDashboard = () => {
                                 <FaChartBar className="h-6 w-6 text-blue-500" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button className="px-4 py-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/30 transition-all flex flex-col items-center gap-3">
+                                <Link 
+                                    to="/owner/rooms"
+                                    className="px-4 py-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/30 transition-all flex flex-col items-center gap-3"
+                                >
                                     <FaHotel className="h-8 w-8" />
                                     <span>Manage Rooms</span>
-                                </button>
-                                <button className="px-4 py-6 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-yellow-500/30 transition-all flex flex-col items-center gap-3">
+                                </Link>
+                                <Link 
+                                    to="/owner/bookings"
+                                    className="px-4 py-6 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-yellow-500/30 transition-all flex flex-col items-center gap-3"
+                                >
                                     <FaCalendarAlt className="h-8 w-8" />
                                     <span>Manage Bookings</span>
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     </div>

@@ -28,7 +28,7 @@ const OwnerLayout = ({ children }) => {
                         Access Denied
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                        You need to be logged in as a <strong>Hotel Owner</strong> to access this panel.
+                        You are logged in as <strong>{user?.name}</strong> ({user?.role}), but you need to be a <strong>Hotel Owner</strong> to access this panel.
                     </p>
                     <div className="space-y-3">
                         <a
@@ -53,7 +53,7 @@ const OwnerLayout = ({ children }) => {
     return (
         <div className="flex pt-20">
             <OwnerNavigation isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-            <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+            <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
                 {children}
             </div>
         </div>

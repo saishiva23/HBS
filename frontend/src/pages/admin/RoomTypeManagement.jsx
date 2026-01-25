@@ -15,47 +15,47 @@ const RoomTypeManagement = () => {
   const [roomTypes, setRoomTypes] = useState([
     {
       id: 1,
-      name: 'Deluxe AC Room',
-      type: 'AC',
+      name: 'Standard',
+      type: 'Non-AC',
       beds: '2 Single Beds',
       capacity: 2,
       available: 10,
       total: 15,
-      amenities: ['AC', 'WiFi', 'TV', 'Mini Bar'],
-      description: 'Spacious room with modern amenities and city view'
+      amenities: ['WiFi', 'TV', 'Room Service'],
+      description: 'Comfortable room with basic amenities'
+    },
+    {
+      id: 4,
+      name: 'Family',
+      type: 'AC',
+      beds: '4 Beds',
+      capacity: 4,
+      available: 2,
+      total: 5,
+      amenities: ['WiFi', 'TV', 'Room Service'],
+      description: 'Perfect for families'
     },
     {
       id: 2,
-      name: 'Premium AC Suite',
+      name: 'Standard AC',
+      type: 'AC',
+      beds: '2 Single Beds',
+      capacity: 2,
+      available: 8,
+      total: 12,
+      amenities: ['WiFi', 'TV', 'Room Service'],
+      description: 'Modern room with air conditioning'
+    },
+    {
+      id: 3,
+      name: 'Deluxe',
       type: 'AC',
       beds: '1 King Bed',
       capacity: 2,
       available: 5,
       total: 8,
-      amenities: ['AC', 'WiFi', 'TV', 'Mini Bar', 'Jacuzzi'],
-      description: 'Luxury suite with premium amenities'
-    },
-    {
-      id: 3,
-      name: 'Standard Non-AC Room',
-      type: 'Non-AC',
-      beds: '2 Single Beds',
-      capacity: 2,
-      available: 8,
-      total: 12,
-      amenities: ['Fan', 'WiFi', 'TV'],
-      description: 'Comfortable room with basic amenities'
-    },
-    {
-      id: 4,
-      name: 'Family Room',
-      type: 'AC',
-      beds: '2 Double Beds',
-      capacity: 4,
-      available: 3,
-      total: 5,
-      amenities: ['AC', 'WiFi', 'TV', 'Mini Bar', 'Extra Space'],
-      description: 'Perfect for families with extra space and beds'
+      amenities: ['WiFi', 'TV', 'Room Service'],
+      description: 'Spacious deluxe room with premium amenities'
     }
   ]);
 
@@ -65,27 +65,27 @@ const RoomTypeManagement = () => {
   const [roomToDelete, setRoomToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'AC',
+    name: 'Standard',
+    type: 'Non-AC',
     beds: '2 Single Beds',
     capacity: 2,
     total: 0,
-    amenities: [],
+    amenities: ['WiFi', 'TV', 'Room Service'],
     description: ''
   });
 
-  const bedOptions = ['1 Single Bed', '2 Single Beds', '1 Double Bed', '2 Double Beds', '1 King Bed', '4 Beds'];
-  const amenityOptions = ['AC', 'WiFi', 'TV', 'Mini Bar', 'Jacuzzi', 'Balcony', 'Room Service', 'Safe', 'Coffee Maker'];
+  const bedOptions = ['1 King Bed', '2 Single Beds', '4 Beds'];
+  const amenityOptions = ['WiFi', 'TV', 'Room Service'];
 
   const openAddModal = () => {
     setEditingRoom(null);
     setFormData({
-      name: '',
-      type: 'AC',
+      name: 'Standard',
+      type: 'Non-AC',
       beds: '2 Single Beds',
       capacity: 2,
       total: 0,
-      amenities: [],
+      amenities: ['WiFi', 'TV', 'Room Service'],
       description: ''
     });
     setShowModal(true);
@@ -259,69 +259,69 @@ const RoomTypeManagement = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Room Name *</label>
-                <input
-                  type="text"
+                <select
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    let beds = '4 Beds';
+                    let capacity = 4;
+                    let type = 'Non-AC';
+
+                    if (name === 'Standard AC') {
+                      beds = '2 Single Beds';
+                      capacity = 2;
+                      type = 'AC';
+                    } else if (name === 'Deluxe') {
+                      beds = '1 King Bed';
+                      capacity = 2;
+                      type = 'AC';
+                    } else if (name === 'Family') {
+                      beds = '4 Beds';
+                      capacity = 4;
+                      type = 'AC';
+                    } else if (name === 'Standard') {
+                      beds = '2 Single Beds';
+                      capacity = 2;
+                      type = 'Non-AC';
+                    }
+
+                    setFormData({
+                      ...formData,
+                      name,
+                      type,
+                      beds,
+                      capacity
+                    });
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400"
-                  placeholder="e.g., Deluxe AC Room"
-                />
+                >
+                  <option value="Standard">Standard</option>
+                  <option value="Standard AC">Standard AC</option>
+                  <option value="Deluxe">Deluxe</option>
+                  <option value="Family">Family</option>
+                </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Room Type *</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({...formData, type: 'AC'})}
-                      className={`flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition ${
-                        formData.type === 'AC'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <FaSnowflake /> AC
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({...formData, type: 'Non-AC'})}
-                      className={`flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition ${
-                        formData.type === 'Non-AC'
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <FaFan /> Non-AC
-                    </button>
-                  </div>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bed Configuration *</label>
                   <select
+                    disabled
                     value={formData.beds}
-                    onChange={(e) => setFormData({...formData, beds: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-600 dark:text-gray-400 cursor-not-allowed"
                   >
-                    {bedOptions.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
+                    <option value={formData.beds}>{formData.beds}</option>
                   </select>
                 </div>
-              </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capacity *</label>
                   <input
                     type="number"
-                    required
-                    min="1"
-                    max="10"
+                    disabled
                     value={formData.capacity}
-                    onChange={(e) => setFormData({...formData, capacity: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-600 dark:text-gray-400 cursor-not-allowed"
                   />
                 </div>
 

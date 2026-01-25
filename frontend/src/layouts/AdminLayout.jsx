@@ -76,7 +76,7 @@ const AdminLayout = ({ children }) => {
     return (
         <div className="flex pt-20">
             {/* Mobile Menu Toggle */}
-            <div className="lg:hidden fixed top-24 right-4 z-50">
+            <div className="md:hidden fixed top-24 right-4 z-50">
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -91,8 +91,8 @@ const AdminLayout = ({ children }) => {
 
             {/* Sidebar */}
             <div
-                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-40 transition-transform duration-300 border-r border-gray-100 dark:border-gray-700 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                    } lg:translate-x-0 w-64`}
+                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-[60] transition-transform duration-300 border-r border-gray-100 dark:border-gray-700 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                    } md:translate-x-0 w-64`}
             >
                 <div className="p-6 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
                     {/* Logo/Header */}
@@ -162,13 +162,13 @@ const AdminLayout = ({ children }) => {
             {/* Overlay for mobile */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
                     onClick={() => setIsMobileMenuOpen(false)}
                 ></div>
             )}
 
             {/* Main Content */}
-            <div className="flex-1 lg:ml-64">
+            <div className="flex-1 md:ml-64">
                 {children}
             </div>
         </div>

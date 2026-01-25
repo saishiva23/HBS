@@ -10,8 +10,7 @@ import { addToRecentlyViewed } from "../components/RecentlyViewedHotels";
 
 
 
-const currency = (v) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
+import { calculateNights, currency, getCappedPrice } from "../utils/bookingUtils";
 
 const parseKm = (distanceText) => {
   if (!distanceText) return null;
@@ -187,14 +186,22 @@ const SearchResults = () => {
 
     addToRecentlyViewed(hotel.id);
 
+    const nights = calculateNights(initialValues.start, initialValues.end);
+    const roomsCount = parseInt(initialValues.rooms || "1");
+    
+    const basePrice = getCappedPrice(hotel.name, hotel.price);
+    
     const bookingDetails = {
       hotel: hotel.name,
       roomType: hotel.roomType,
-      price: hotel.price,
+      basePrice: basePrice,
+      price: basePrice * roomsCount * nights,
       checkIn: initialValues.start || "Not selected",
       checkOut: initialValues.end || "Not selected",
       guests: initialValues.adults || "2",
-      rooms: initialValues.rooms || "1",
+      rooms: roomsCount,
+      nights: nights,
+      image: hotel.image
     };
 
     const existingCart = JSON.parse(localStorage.getItem("hotelCart") || "[]");

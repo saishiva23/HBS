@@ -29,10 +29,10 @@ const RevenueReports = () => {
     ];
 
     const revenueByRoomType = [
-        { type: 'Standard Room', revenue: 185000, bookings: 920, percentage: 28 },
-        { type: 'Deluxe Suite', revenue: 245000, bookings: 620, percentage: 37 },
-        { type: 'Premium Suite', revenue: 152000, bookings: 280, percentage: 23 },
-        { type: 'Family Room', revenue: 82000, bookings: 240, percentage: 12 },
+        { type: 'Standard', revenue: 150000, bookings: 750, percentage: 25 },
+        { type: 'Standard AC', revenue: 180000, bookings: 400, percentage: 30 },
+        { type: 'Deluxe', revenue: 200000, bookings: 500, percentage: 30 },
+        { type: 'Family', revenue: 134000, bookings: 120, percentage: 15 },
     ];
 
     const topPerformingMonths = monthlyRevenue

@@ -284,7 +284,7 @@ const Bookings = () => {
               { key: 'all', label: 'All' },
               { key: 'confirmed', label: 'Confirmed' },
               { key: 'pending', label: 'Pending' },
-              { key: 'completed', label: 'Completed' },
+              { key: 'completed', label: 'Past Stays' },
               { key: 'cancelled', label: 'Cancelled' },
             ].map((tab) => (
               <button
@@ -306,7 +306,9 @@ const Bookings = () => {
               <TicketIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h2 className="text-xl font-bold dark:text-white mb-2">No bookings found</h2>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                {filter === 'all' ? "You haven't made any bookings yet." : `No ${filter} bookings.`}
+                {filter === 'all' 
+                  ? "You haven't made any bookings yet." 
+                  : `No ${filter === 'completed' ? 'past stays' : filter} bookings.`}
               </p>
               <Link
                 to="/"
@@ -343,7 +345,7 @@ const Bookings = () => {
                           </p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(booking.status)}`}>
-                          {booking.status.toUpperCase()}
+                          {booking.status === 'completed' ? 'PAST STAY' : booking.status.toUpperCase()}
                         </span>
                       </div>
 

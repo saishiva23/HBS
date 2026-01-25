@@ -14,21 +14,26 @@ import {
     FaArrowLeft,
     FaChevronDown,
     FaExchangeAlt,
+    FaExclamationCircle,
 } from 'react-icons/fa';
 import { useState } from 'react';
 import { useHotel } from '../context/HotelContext';
+import { useAuth } from '../context/AuthContext';
 
 const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showHotelSelector, setShowHotelSelector] = useState(false);
     const { hotels, selectedHotel, selectHotel } = useHotel();
+    const { user } = useAuth();
 
     const navItems = [
         { path: '/owner/hotel-profile', label: 'Hotel Profile', icon: FaHotel },
         { path: '/owner/rooms', label: 'Rooms', icon: FaBed },
         { path: '/owner/room-types', label: 'Room Types', icon: FaBed },
         { path: '/owner/bookings', label: 'Bookings', icon: FaCalendarAlt },
+        { path: '/owner/experience', label: 'Customer Experience', icon: FaStar },
+        { path: '/owner/payments', label: 'Payments', icon: FaMoneyBillWave },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -41,7 +46,7 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
     return (
         <>
             {/* Mobile Menu Toggle */}
-            <div className="lg:hidden fixed top-20 right-4 z-50">
+            <div className="md:hidden fixed top-20 right-4 z-50">
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="p-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -56,13 +61,13 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
 
             {/* Sidebar */}
             <div
-                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-40 transition-all duration-300 border-r border-gray-100 dark:border-gray-700 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                    } lg:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}
+                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-[60] transition-all duration-300 border-r border-gray-100 dark:border-gray-700 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                    } md:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}
             >
                 {/* Collapse Toggle Button (Desktop Only) */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden lg:flex absolute -right-3 top-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 text-gray-500 hover:text-yellow-600 shadow-md z-50 transition-all"
+                    className="hidden md:flex absolute -right-3 top-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 text-gray-500 hover:text-yellow-600 shadow-md z-50 transition-all"
                 >
                     <FaChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-90'}`} />
                 </button>
@@ -101,9 +106,15 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
                                         <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
                                             {selectedHotel?.name}
                                         </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                            {selectedHotel?.location}
-                                        </p>
+                                        {user?.role !== 'Hotel Owner' ? (
+                                            <p className="text-gray-600 dark:text-gray-400 text-xs truncate">
+                                                You are logged in as <strong>{user?.name}</strong> ({user?.role}), but you need to be a <strong>Hotel Owner</strong> to access this panel.
+                                            </p>
+                                        ) : (
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                {selectedHotel?.location}
+                                            </p>
+                                        )}
                                     </div>
                                     <FaChevronDown className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${showHotelSelector ? 'rotate-180' : ''}`} />
                                 </>
@@ -206,7 +217,7 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
             {/* Overlay for mobile */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
                     onClick={() => setIsMobileMenuOpen(false)}
                 ></div>
             )}

@@ -15,12 +15,12 @@ import OwnerLayout from '../../layouts/OwnerLayout';
 
 const RoomManagement = () => {
     const [rooms, setRooms] = useState([
-        { id: 1, number: '101', type: 'Deluxe Suite', capacity: 2, status: 'Available', floor: 1, beds: '1 King Bed', size: '450 sq ft' },
-        { id: 2, number: '102', type: 'Standard Room', capacity: 2, status: 'Occupied', floor: 1, beds: '2 Single Beds', size: '300 sq ft' },
-        { id: 3, number: '201', type: 'Premium Suite', capacity: 4, status: 'Available', floor: 2, beds: '1 King + 1 Queen', size: '600 sq ft' },
-        { id: 4, number: '202', type: 'Family Room', capacity: 4, status: 'Maintenance', floor: 2, beds: '2 Queen Beds', size: '500 sq ft' },
-        { id: 5, number: '301', type: 'Executive Suite', capacity: 2, status: 'Available', floor: 3, beds: '1 King Bed', size: '700 sq ft' },
-        { id: 6, number: '302', type: 'Standard Room', capacity: 2, status: 'Available', floor: 3, beds: '1 Queen Bed', size: '300 sq ft' },
+        { id: 1, number: '101', type: 'Deluxe', capacity: 2, status: 'Available', floor: 1, beds: '1 King Bed', size: '450 sq ft' },
+        { id: 2, number: '102', type: 'Standard', capacity: 2, status: 'Occupied', floor: 1, beds: '2 Single Beds', size: '300 sq ft' },
+        { id: 3, number: '201', type: 'Standard AC', capacity: 2, status: 'Available', floor: 2, beds: '2 Single Beds', size: '350 sq ft' },
+        { id: 4, number: '202', type: 'Family', capacity: 4, status: 'Available', floor: 2, beds: '4 Beds', size: '600 sq ft' },
+        { id: 5, number: '301', type: 'Standard AC', capacity: 2, status: 'Available', floor: 3, beds: '2 Single Beds', size: '400 sq ft' },
+        { id: 6, number: '302', type: 'Standard', capacity: 2, status: 'Available', floor: 3, beds: '2 Single Beds', size: '300 sq ft' },
     ]);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,15 +29,15 @@ const RoomManagement = () => {
     const [editingRoom, setEditingRoom] = useState(null);
     const [formData, setFormData] = useState({
         number: '',
-        type: 'Standard Room',
+        type: 'Standard',
         capacity: 2,
         status: 'Available',
         floor: 1,
-        beds: '',
+        beds: '2 Single Beds',
         size: '',
     });
 
-    const roomTypes = ['Standard Room', 'Deluxe Suite', 'Premium Suite', 'Family Room', 'Executive Suite', 'Presidential Suite'];
+    const roomTypes = ['Standard', 'Standard AC', 'Deluxe', 'Family'];
     const statusOptions = ['Available', 'Occupied', 'Maintenance', 'Reserved'];
 
     const filteredRooms = rooms.filter(room => {
@@ -75,11 +75,11 @@ const RoomManagement = () => {
     const resetForm = () => {
         setFormData({
             number: '',
-            type: 'Standard Room',
+            type: 'Standard',
             capacity: 2,
             status: 'Available',
             floor: 1,
-            beds: '',
+            beds: '2 Single Beds',
             size: '',
         });
         setEditingRoom(null);
@@ -270,7 +270,32 @@ const RoomManagement = () => {
                                             <select
                                                 name="type"
                                                 value={formData.type}
-                                                onChange={handleInputChange}
+                                                onChange={(e) => {
+                                                    const type = e.target.value;
+                                                    let beds = '4 Beds';
+                                                    let capacity = 4;
+                                                    
+                                                    if (type === 'Standard AC') {
+                                                        beds = '2 Single Beds';
+                                                        capacity = 2;
+                                                    } else if (type === 'Deluxe') {
+                                                        beds = '1 King Bed';
+                                                        capacity = 2;
+                                                    } else if (type === 'Family') {
+                                                        beds = '4 Beds';
+                                                        capacity = 4;
+                                                    } else if (type === 'Standard') {
+                                                        beds = '2 Single Beds';
+                                                        capacity = 2;
+                                                    }
+                                                    
+                                                    setFormData({
+                                                        ...formData,
+                                                        type,
+                                                        beds,
+                                                        capacity
+                                                    });
+                                                }}
                                                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
                                             >
                                                 {roomTypes.map(type => (
@@ -301,11 +326,10 @@ const RoomManagement = () => {
                                             </label>
                                             <input
                                                 type="number"
+                                                disabled
                                                 name="capacity"
                                                 value={formData.capacity}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
-                                                min="1"
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-600 text-gray-400 cursor-not-allowed"
                                             />
                                         </div>
 
@@ -317,11 +341,10 @@ const RoomManagement = () => {
                                             </label>
                                             <input
                                                 type="text"
+                                                disabled
                                                 name="beds"
                                                 value={formData.beds}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
-                                                placeholder="e.g., 1 King Bed"
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-600 text-gray-400 cursor-not-allowed"
                                             />
                                         </div>
 

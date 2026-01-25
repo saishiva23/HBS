@@ -19,11 +19,10 @@ const PricingAvailability = () => {
 
     const roomTypes = [
         'All Rooms',
-        'Standard Room',
-        'Deluxe Suite',
-        'Premium Suite',
-        'Family Room',
-        'Executive Suite',
+        'Standard',
+        'Standard AC',
+        'Deluxe',
+        'Family',
     ];
 
     // Mock pricing and availability data

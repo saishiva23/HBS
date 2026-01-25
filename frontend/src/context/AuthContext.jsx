@@ -31,27 +31,18 @@ const HARDCODED_USERS = [
 ];
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    
-    if (storedUser && storedToken) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (e) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
     }
-    setLoading(false);
-  }, []);
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return Boolean(localStorage.getItem('user') && localStorage.getItem('token'));
+  });
+  const [loading, setLoading] = useState(false);
 
   // Login function with hardcoded credentials
   const login = async (email, password) => {
