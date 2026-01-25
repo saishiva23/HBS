@@ -18,7 +18,7 @@ import {
 import { useState } from 'react';
 import { useHotel } from '../context/HotelContext';
 
-const OwnerNavigation = () => {
+const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [showHotelSelector, setShowHotelSelector] = useState(false);
@@ -61,49 +61,63 @@ const OwnerNavigation = () => {
 
             {/* Sidebar */}
             <div
-                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-40 transition-transform duration-300 border-r border-gray-100 dark:border-gray-700 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                    } lg:translate-x-0 w-64`}
+                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-40 transition-all duration-300 border-r border-gray-100 dark:border-gray-700 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                    } lg:translate-x-0 ${isCollapsed ? 'w-20' : 'w-64'}`}
             >
-                <div className="p-6">
+                {/* Collapse Toggle Button (Desktop Only) */}
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="hidden lg:flex absolute -right-3 top-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 text-gray-500 hover:text-yellow-600 shadow-md z-50 transition-all"
+                >
+                    <FaChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-90'}`} />
+                </button>
+
+                {/* Scrollable Navigation Area */}
+                <div className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 transition-all duration-300 ${isCollapsed ? 'p-3' : 'p-6'}`}>
                     {/* Logo/Header */}
-                    <div className="mb-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl">
+                    <div className={`${isCollapsed ? 'mb-8' : 'mb-6'}`}>
+                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} mb-2`}>
+                            <div className="p-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex-shrink-0">
                                 <FaHotel className="h-8 w-8 text-white" />
                             </div>
-                            <div>
-                                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                            {!isCollapsed && (
+                                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent truncate whitespace-nowrap">
                                     Owner Panel
                                 </h2>
-                            </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Hotel Selector */}
-                    <div className="mb-6 relative">
+                    <div className={`${isCollapsed ? 'mb-8' : 'mb-6'} relative`}>
                         <button
                             onClick={() => setShowHotelSelector(!showHotelSelector)}
-                            className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 transition-all"
+                            title={isCollapsed ? selectedHotel?.name : ''}
+                            className={`w-full flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 transition-all ${isCollapsed ? 'p-2 justify-center' : 'p-3 gap-3'}`}
                         >
                             <img
                                 src={selectedHotel?.image}
                                 alt={selectedHotel?.name}
-                                className="h-10 w-10 rounded-lg object-cover"
+                                className="h-10 w-10 rounded-lg object-cover flex-shrink-0"
                             />
-                            <div className="flex-1 text-left">
-                                <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                    {selectedHotel?.name}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    {selectedHotel?.location}
-                                </p>
-                            </div>
-                            <FaChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${showHotelSelector ? 'rotate-180' : ''}`} />
+                            {!isCollapsed && (
+                                <>
+                                    <div className="flex-1 text-left truncate">
+                                        <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                                            {selectedHotel?.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {selectedHotel?.location}
+                                        </p>
+                                    </div>
+                                    <FaChevronDown className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${showHotelSelector ? 'rotate-180' : ''}`} />
+                                </>
+                            )}
                         </button>
 
                         {/* Hotel Dropdown */}
                         {showHotelSelector && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                            <div className={`absolute top-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden ${isCollapsed ? 'left-0 w-64' : 'left-0 right-0'}`}>
                                 <div className="p-2">
                                     <p className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                                         <FaExchangeAlt className="h-3 w-3" />
@@ -114,8 +128,8 @@ const OwnerNavigation = () => {
                                             key={hotel.id}
                                             onClick={() => handleHotelSelect(hotel.id)}
                                             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${selectedHotel?.id === hotel.id
-                                                    ? 'bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 border border-yellow-300 dark:border-yellow-700'
-                                                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                ? 'bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 border border-yellow-300 dark:border-yellow-700'
+                                                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                                                 }`}
                                         >
                                             <img
@@ -151,41 +165,45 @@ const OwnerNavigation = () => {
                                     key={item.path}
                                     to={item.path}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${active
+                                    title={isCollapsed ? item.label : ''}
+                                    className={`flex items-center rounded-xl font-semibold transition-all ${isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'} ${active
                                         ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg shadow-yellow-500/30'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-gray-700 border border-transparent hover:border-yellow-400'
                                         }`}
                                 >
-                                    <Icon className="h-5 w-5" />
-                                    {item.label}
+                                    <Icon className="h-5 w-5 flex-shrink-0" />
+                                    {!isCollapsed && <span className="truncate">{item.label}</span>}
                                 </Link>
                             );
                         })}
                     </nav>
 
                     {/* Divider */}
-                    <div className="my-6 border-t border-gray-200 dark:border-gray-700"></div>
+                    <div className={`border-t border-gray-200 dark:border-gray-700 transition-all duration-300 ${isCollapsed ? 'my-4' : 'my-6'}`}></div>
 
                     {/* Back to Main Site */}
                     <Link
                         to="/"
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-blue-500 transition-all"
+                        title={isCollapsed ? 'Back to Main Site' : ''}
+                        className={`flex items-center rounded-xl font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-blue-500 transition-all ${isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'}`}
                     >
-                        <FaArrowLeft className="h-4 w-4" />
-                        Back to Main Site
+                        <FaArrowLeft className="h-4 w-4 flex-shrink-0" />
+                        {!isCollapsed && <span className="truncate">Back to Main Site</span>}
                     </Link>
                 </div>
 
                 {/* User Info at Bottom */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                <div className={`border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-all duration-300 ${isCollapsed ? 'p-3' : 'p-6'}`}>
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex-shrink-0 flex items-center justify-center text-white font-bold shadow-md">
                             JD
                         </div>
-                        <div>
-                            <p className="font-semibold text-gray-900 dark:text-white text-sm">John Doe</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Hotel Owner</p>
-                        </div>
+                        {!isCollapsed && (
+                            <div className="truncate">
+                                <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">John Doe</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Hotel Owner</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

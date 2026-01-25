@@ -26,6 +26,9 @@ const LoginPage = () => {
                 if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'hotel_admin') {
                     toast.success(`Welcome back, ${user.name}!`);
                     navigate('/admin/dashboard');
+                } else if (user.role === 'owner') {
+                    toast.success(`Welcome back, ${user.name}!`);
+                    navigate('/owner/dashboard');
                 } else {
                     toast.success(`Welcome back, ${user.name}!`);
                     navigate('/');
@@ -47,6 +50,9 @@ const LoginPage = () => {
         } else if (type === 'admin') {
             setEmail('admin@stays.in');
             setPassword('admin123');
+        } else if (type === 'owner') {
+            setEmail('owner@stays.in');
+            setPassword('owner123');
         }
     };
 
@@ -100,6 +106,19 @@ const LoginPage = () => {
                                     type="button"
                                     onClick={() => fillTestCredentials('admin')}
                                     className="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    Use
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-gray-700 transition-colors">
+                                <div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Hotel Owner</p>
+                                    <p className="text-sm font-mono text-gray-700 dark:text-gray-200">owner@stays.in / owner123</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => fillTestCredentials('owner')}
+                                    className="text-xs bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 transition-colors"
                                 >
                                     Use
                                 </button>

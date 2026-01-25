@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import OwnerNavigation from '../components/OwnerNavigation';
@@ -5,6 +6,7 @@ import { FaLock } from 'react-icons/fa';
 
 const OwnerLayout = ({ children }) => {
     const { isAuthenticated, user } = useAuth();
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     // Check if user is authenticated and has owner role (Hotel Owner only)
     const isAuthorized = isAuthenticated && user?.role === 'owner';
@@ -50,8 +52,8 @@ const OwnerLayout = ({ children }) => {
     // Authorized - render the owner panel
     return (
         <div className="flex pt-20">
-            <OwnerNavigation />
-            <div className="flex-1 lg:ml-64">
+            <OwnerNavigation isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+            <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
                 {children}
             </div>
         </div>

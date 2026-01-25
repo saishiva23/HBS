@@ -93,10 +93,10 @@ const AdminLayout = ({ children }) => {
 
             {/* Sidebar */}
             <div
-                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-40 transition-transform duration-300 border-r border-gray-100 dark:border-gray-700 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed left-0 top-20 h-[calc(100vh-80px)] bg-white dark:bg-gray-800 shadow-xl z-40 transition-transform duration-300 border-r border-gray-100 dark:border-gray-700 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                     } lg:translate-x-0 w-64`}
             >
-                <div className="p-6">
+                <div className="p-6 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
                     {/* Logo/Header */}
                     <div className="mb-6">
                         <div className="flex items-center gap-3 mb-2">
@@ -148,7 +148,7 @@ const AdminLayout = ({ children }) => {
                 </div>
 
                 {/* User Info at Bottom */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md">
                             {user?.name?.charAt(0) || 'A'}

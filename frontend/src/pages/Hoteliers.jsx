@@ -172,22 +172,46 @@ const Hoteliers = () => {
 
       {/* Already a Partner Section */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 md:p-12 shadow-2xl">
+        <div className="bg-gradient-to-r from-yellow-500 to-amber-500 rounded-3xl p-8 md:p-12 shadow-2xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
                 Already a Partner?
               </h2>
-              <p className="text-blue-100">
-                Access your  dashboard to manage your properties
+              <p className="text-yellow-100">
+                Access your Owner Dashboard to manage your properties
+              </p>
+            </div>
+            <Link
+              to="/owner/dashboard"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-white text-yellow-600 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            >
+              <FaHotel className="h-5 w-5" />
+              Owner Dashboard
+              <FaArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Site Admin Section */}
+      <div className="max-w-7xl mx-auto px-6 pb-8">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl p-8 md:p-12 shadow-2xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                Site Administrator?
+              </h2>
+              <p className="text-purple-100">
+                Access the Admin Panel to manage the entire platform
               </p>
             </div>
             <Link
               to="/admin/dashboard"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-white text-purple-600 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
             >
-              <FaHotel className="h-5 w-5" />
-              Access Admin Panel
+              <FaShieldAlt className="h-5 w-5" />
+              Admin Panel
               <FaArrowRight className="h-5 w-5" />
             </Link>
           </div>
