@@ -30,8 +30,10 @@ const FilterChip = ({ children, active, onClick }) => (
   </button>
 );
 
-const ResultCard = ({ item, onAddToCart }) => {
+const ResultCard = ({ item, onAddToCart, nights = 1, rooms = 1 }) => {
   const discount = Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100);
+  const totalPrice = item.price * nights * rooms;
+  const totalOriginal = item.originalPrice * nights * rooms;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 shadow-sm p-4 flex gap-4 hover:shadow-md transition-colors">
@@ -83,9 +85,11 @@ const ResultCard = ({ item, onAddToCart }) => {
           </div>
 
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 w-48 text-right ml-4 transition-colors">
-            <p className="text-sm text-gray-500 dark:text-gray-400 line-through">{currency(item.originalPrice)}</p>
-            <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{currency(item.price)}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">per night + taxes</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 line-through">{currency(totalOriginal)}</p>
+            <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{currency(totalPrice)}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {nights > 1 || rooms > 1 ? `Total stay (${nights} nights, ${rooms} rooms)` : 'per night + taxes'}
+            </p>
             <button
               onClick={() => onAddToCart(item)}
               className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
@@ -322,7 +326,13 @@ const SearchResults = () => {
 
           <div className="space-y-4">
             {results.map((hotel) => (
-              <ResultCard key={hotel.id} item={hotel} onAddToCart={handleAddToCart} />
+              <ResultCard 
+                key={hotel.id} 
+                item={hotel} 
+                onAddToCart={handleAddToCart}
+                nights={calculateNights(initialValues.start, initialValues.end)}
+                rooms={parseInt(initialValues.rooms || "1")}
+              />
             ))}
           </div>
         </>

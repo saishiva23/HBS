@@ -5,14 +5,35 @@ export const calculateNights = (checkIn, checkOut) => {
     return 1;
   }
   
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
+  const currentYear = new Date().getFullYear();
   
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+  const parse = (dateStr) => {
+    if (!dateStr) return null;
+    let s = String(dateStr).trim();
+    
+    // Check for "25 Jan" format
+    const parts = s.split(' ');
+    if (parts.length === 2 && !isNaN(parseInt(parts[0]))) {
+      // Re-order to "Jan 25, 2026" for better cross-browser compatibility
+      return new Date(`${parts[1]} ${parts[0]}, ${currentYear}`);
+    }
+    
+    // Check if it already has the year
+    if (!s.includes(String(currentYear)) && s.length <= 10) {
+      s = `${s} ${currentYear}`;
+    }
+    
+    return new Date(s);
+  };
+
+  const start = parse(checkIn);
+  const end = parse(checkOut);
+  
+  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
     return 1;
   }
   
-  const diffTime = end - start;
+  const diffTime = end.getTime() - start.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   return diffDays > 0 ? diffDays : 1;
@@ -26,17 +47,15 @@ export const currency = (v) =>
   }).format(v);
 
 /**
- * Ensures a price doesn't exceed the mock reference price by more than 5000.
+ * Ensures a price doesn't exceed the absolute maximum of 5000.
  * @param {string} hotelName 
  * @param {number} targetPrice 
  */
 export const getCappedPrice = (hotelName, targetPrice) => {
-  const hotel = mockHotels.find(h => h.name === hotelName);
-  const referencePrice = hotel ? hotel.price : targetPrice;
-  const maxAllowed = referencePrice + 5000;
+  const MAX_ALLOWED = 5000;
   
-  if (targetPrice > maxAllowed) {
-    return maxAllowed;
+  if (targetPrice > MAX_ALLOWED) {
+    return MAX_ALLOWED;
   }
   return targetPrice;
 };

@@ -30,13 +30,32 @@ const SearchBar = ({ initialValues }) => {
   const [openGuests, setOpenGuests] = useState(false);
   const [destination, setDestination] = useState(initialValues?.destination || "");
 
+  const navigate = useNavigate();
+
   // Animated label state
   const [currentLabelIndex, setCurrentLabelIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const calendarRef = useRef(null);
   const guestsRef = useRef(null);
-  const navigate = useNavigate();
+
+  // Unified search handler
+  const handleSearch = (overrideParams = {}) => {
+    const params = new URLSearchParams({
+      destination: overrideParams.destination ?? destination,
+      adults: String(overrideParams.adults ?? adults),
+      children: String(overrideParams.children ?? children),
+      rooms: String(overrideParams.rooms ?? rooms),
+      start: format(overrideParams.startDate ?? dateRange[0].startDate, "dd MMM"),
+      end: format(overrideParams.endDate ?? dateRange[0].endDate, "dd MMM"),
+      pets: String(overrideParams.pets ?? petsAllowed),
+    });
+    
+    // Only navigate if we have a destination
+    if (params.get("destination")) {
+      navigate(`/search?${params.toString()}`);
+    }
+  };
 
   const [dateRange, setDateRange] = useState([
     {
@@ -66,6 +85,27 @@ const SearchBar = ({ initialValues }) => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Synchronize state with props when initialValues change (e.g. URL update)
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.destination !== undefined) setDestination(initialValues.destination || "");
+      if (initialValues.adults !== undefined) setAdults(Number(initialValues.adults) || 2);
+      if (initialValues.children !== undefined) setChildren(Number(initialValues.children) || 0);
+      if (initialValues.rooms !== undefined) setRooms(Number(initialValues.rooms) || 1);
+      if (initialValues.pets !== undefined) setPetsAllowed(initialValues.pets === "true" || false);
+      
+      if (initialValues.start && initialValues.end) {
+        setDateRange([
+          {
+            startDate: parseDate(initialValues.start),
+            endDate: parseDate(initialValues.end),
+            key: "selection",
+          },
+        ]);
+      }
+    }
+  }, [initialValues]);
 
   // Outside click handler
   useEffect(() => {
@@ -218,7 +258,10 @@ const SearchBar = ({ initialValues }) => {
                 Cancel
               </button>
               <button
-                onClick={() => setOpenCalendar(false)}
+                onClick={() => {
+                  setOpenCalendar(false);
+                  handleSearch();
+                }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
               >
                 Apply
@@ -345,7 +388,10 @@ const SearchBar = ({ initialValues }) => {
             </button>
 
             <button
-              onClick={() => setOpenGuests(false)}
+              onClick={() => {
+                setOpenGuests(false);
+                handleSearch();
+              }}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
               Apply
