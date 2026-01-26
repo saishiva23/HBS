@@ -1,0 +1,130 @@
+package com.hotel.service;
+
+import java.util.List;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.hotel.custom_exceptions.AuthenticationFailedException;
+import com.hotel.custom_exceptions.InvalidInputException;
+import com.hotel.custom_exceptions.ResourceNotFoundException;
+import com.hotel.dtos.ApiResponse;
+import com.hotel.dtos.AuthRequest;
+import com.hotel.dtos.AuthResp;
+import com.hotel.dtos.UserDTO;
+import com.hotel.dtos.UserRegDTO;
+import com.hotel.entities.User;
+import com.hotel.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service // spring bean - B.L
+@Transactional // auto tx management
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    // depcy - Constructor based D.I
+    private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public List<UserDTO> getAllUsers() {
+
+        return userRepository.findAll() // List<Entity>
+                .stream() // Stream<Entity>
+                .map(entity -> modelMapper.map(entity, UserDTO.class)) // Stream<DTO>
+                .toList();
+    }
+
+    @Override
+    public UserDTO registerUser(UserRegDTO dto) {
+        // 1. check if exists
+        if (userRepository.existsByEmailOrPhone(dto.getEmail(), dto.getPhone())) {
+            throw new InvalidInputException("User already exists with this email or phone");
+        }
+        // 2. map dto -> entity
+        User user = modelMapper.map(dto, User.class);
+        // 3. set default role and encode password
+        user.setUserRole(com.hotel.entities.UserRole.ROLE_CUSTOMER);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // 4. save
+        User savedUser = userRepository.save(user);
+        return modelMapper.map(savedUser, UserDTO.class);
+    }
+
+    @Override
+    public String addUser(User user) {
+        // 1. validate for dup email or phone no
+        if (userRepository.existsByEmailOrPhone(user.getEmail(), user.getPhone())) {
+            // dup email or phone no -> throw custom unchecked exception
+            throw new InvalidInputException("Dup email or phone !!!!!!!!");
+        }
+        // 2. save user details
+        User persistentUser = userRepository.save(user);
+        return "New User added with ID=" + persistentUser.getId();
+    }// tx.commit() -> session.flush() -> DML - insert -> session.close()
+
+    @Override
+    public ApiResponse deleteUserDetails(Long userId) {
+        // 1. check if user exists by id
+        if (userRepository.existsById(userId)) {
+            // => user exists -> mark it for removal
+            userRepository.deleteById(userId);
+            return new ApiResponse("Success", "User details deleted ....");
+        }
+        // user doesn't exist
+        throw new ResourceNotFoundException("User doesn't exist by id !!!!!");
+    }// deletes rec from DB
+
+    @Override
+    public User getUserDetails(Long userId) {
+        // TODO Auto-generated method stub
+        return userRepository.findById(userId) // Optional<User>
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid user id !!!!!"));
+    }
+
+    @Override
+    public ApiResponse updateDetails(Long id, User user) {
+        // 1. get user details by id
+        User persistentUser = getUserDetails(id);
+        // 2 . call setters
+        persistentUser.setDob(user.getDob());
+        persistentUser.setFirstName(user.getFirstName());
+        persistentUser.setLastName(user.getLastName());
+        persistentUser.setPassword(user.getPassword());
+        persistentUser.setRegAmount(user.getRegAmount());
+        // similarly call other setters
+        return new ApiResponse("Success", "Updated user details");
+    }
+
+    @Override
+    public AuthResp authenticate(AuthRequest request) {
+        // 1. validate user with em & password
+        User user = userRepository.findByEmailAndPassword(request.getEmail(), request.getPassword())
+                .orElseThrow(() -> new AuthenticationFailedException("Invalid email or password"));
+        // 2. failed -> throw custom exc
+        // 3. success -> entity -> dto
+        /*
+         * API of ModelMapper class
+         * public D map(Object src, Class<D> class)
+         * - loads dest class & creates instance : def ctor
+         * - calls MATCHING getters(src) & setters(dest)
+         * - rets its instance
+         */
+        AuthResp dto = modelMapper.map(user, AuthResp.class);
+        dto.setMessage("Successful Login !");
+        return dto;
+    }
+
+    @Override
+    public ApiResponse encryptPasswords() {
+        // get all users
+        List<User> users = userRepository.findAll();
+        // user - persistent
+        users.forEach(user -> user.setPassword(passwordEncoder.encode(user.getPassword())));
+        return new ApiResponse("Password encrypted", "Success");
+    }
+
+}
