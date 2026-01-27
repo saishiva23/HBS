@@ -25,13 +25,18 @@ public class Room extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id", nullable = false)
     @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Hotel hotel;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_type_id", nullable = false)
     @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private RoomType roomType;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @Column(name = "status")
+    private String status = "AVAILABLE"; // AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED
 }

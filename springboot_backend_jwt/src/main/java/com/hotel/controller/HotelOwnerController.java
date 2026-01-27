@@ -2,6 +2,7 @@ package com.hotel.controller;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/owner")
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175" })
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "http://localhost:5174",
+        "http://localhost:5175" })
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_HOTEL_MANAGER')")
 @Slf4j
@@ -59,7 +61,7 @@ public class HotelOwnerController {
     }
 
     @PutMapping("/hotels/{id}")
-    public ResponseEntity<Hotel> updateHotel(@PathVariable Long id, @RequestBody @Valid HotelDTO hotelDTO, 
+    public ResponseEntity<Hotel> updateHotel(@PathVariable Long id, @RequestBody @Valid HotelDTO hotelDTO,
             Principal principal) {
         return ResponseEntity.ok(hotelOwnerService.updateHotel(id, hotelDTO, principal.getName()));
     }
@@ -76,7 +78,7 @@ public class HotelOwnerController {
     }
 
     @PostMapping("/hotels/{hotelId}/rooms")
-    public ResponseEntity<RoomType> addRoomType(@PathVariable Long hotelId, 
+    public ResponseEntity<RoomType> addRoomType(@PathVariable Long hotelId,
             @RequestBody @Valid RoomTypeDTO roomTypeDTO, Principal principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(hotelOwnerService.addRoomType(hotelId, roomTypeDTO, principal.getName()));
@@ -94,6 +96,32 @@ public class HotelOwnerController {
         return ResponseEntity.ok(hotelOwnerService.deleteRoomType(hotelId, roomId, principal.getName()));
     }
 
+    // Individual Room Management
+    @GetMapping("/hotels/{hotelId}/room-list")
+    public ResponseEntity<List<com.hotel.dtos.RoomResponseDTO>> getHotelRoomsList(@PathVariable Long hotelId,
+            Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getHotelRoomsList(hotelId, principal.getName()));
+    }
+
+    @PostMapping("/hotels/{hotelId}/room-list")
+    public ResponseEntity<com.hotel.entities.Room> addRoom(@PathVariable Long hotelId,
+            @RequestBody @Valid com.hotel.dtos.RoomDTO roomDTO, Principal principal) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(hotelOwnerService.addRoom(hotelId, roomDTO, principal.getName()));
+    }
+
+    @PutMapping("/hotels/{hotelId}/room-list/{roomId}")
+    public ResponseEntity<com.hotel.entities.Room> updateRoom(@PathVariable Long hotelId, @PathVariable Long roomId,
+            @RequestBody @Valid com.hotel.dtos.RoomDTO roomDTO, Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.updateRoom(hotelId, roomId, roomDTO, principal.getName()));
+    }
+
+    @DeleteMapping("/hotels/{hotelId}/room-list/{roomId}")
+    public ResponseEntity<ApiResponse> deleteRoom(@PathVariable Long hotelId, @PathVariable Long roomId,
+            Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.deleteRoom(hotelId, roomId, principal.getName()));
+    }
+
     // Booking Management
     @GetMapping("/bookings")
     public ResponseEntity<List<BookingResponseDTO>> getMyHotelBookings(Principal principal) {
@@ -107,7 +135,7 @@ public class HotelOwnerController {
     }
 
     @PatchMapping("/bookings/{bookingId}/status")
-    public ResponseEntity<ApiResponse> updateBookingStatus(@PathVariable Long bookingId, 
+    public ResponseEntity<ApiResponse> updateBookingStatus(@PathVariable Long bookingId,
             @org.springframework.web.bind.annotation.RequestParam String status, Principal principal) {
         return ResponseEntity.ok(hotelOwnerService.updateBookingStatus(bookingId, status, principal.getName()));
     }
@@ -116,5 +144,43 @@ public class HotelOwnerController {
     @GetMapping("/dashboard/stats")
     public ResponseEntity<?> getDashboardStats(Principal principal) {
         return ResponseEntity.ok(hotelOwnerService.getOwnerDashboardStats(principal.getName()));
+    }
+
+    // Customer Experience - Reviews
+    @GetMapping("/hotels/{hotelId}/reviews")
+    public ResponseEntity<List<com.hotel.dtos.ReviewResponseDTO>> getHotelReviews(@PathVariable Long hotelId,
+            Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getHotelReviews(hotelId, principal.getName()));
+    }
+
+    @GetMapping("/hotels/{hotelId}/reviews/stats")
+    public ResponseEntity<Map<String, Object>> getReviewStats(@PathVariable Long hotelId, Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getReviewStats(hotelId, principal.getName()));
+    }
+
+    // Customer Experience - Complaints
+    @GetMapping("/hotels/{hotelId}/complaints")
+    public ResponseEntity<List<com.hotel.dtos.ComplaintResponseDTO>> getHotelComplaints(@PathVariable Long hotelId,
+            Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getHotelComplaints(hotelId, principal.getName()));
+    }
+
+    @PutMapping("/complaints/{complaintId}/resolve")
+    public ResponseEntity<ApiResponse> resolveComplaint(@PathVariable Long complaintId,
+            @RequestBody Map<String, String> payload, Principal principal) {
+        String resolution = payload.get("resolution");
+        return ResponseEntity.ok(hotelOwnerService.resolveComplaint(complaintId, resolution, principal.getName()));
+    }
+
+    // Payment Management
+    @GetMapping("/hotels/{hotelId}/payments")
+    public ResponseEntity<List<com.hotel.dtos.BookingResponseDTO>> getPaymentHistory(@PathVariable Long hotelId,
+            Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getPaymentHistory(hotelId, principal.getName()));
+    }
+
+    @GetMapping("/hotels/{hotelId}/payments/stats")
+    public ResponseEntity<Map<String, Object>> getPaymentStats(@PathVariable Long hotelId, Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getPaymentStats(hotelId, principal.getName()));
     }
 }

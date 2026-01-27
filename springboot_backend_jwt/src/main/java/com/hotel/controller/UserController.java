@@ -84,7 +84,7 @@ public class UserController {
         } catch (Exception e) {
             log.error("Authentication failed for user: {}", request.getEmail(), e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResp(null, "Invalid email or password"));
+                    .body(new AuthResp(null, "Invalid email or password", null, null));
         }
     }
 

@@ -20,7 +20,7 @@ import com.hotel.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-// @Component - Disabled to use existing database users
+@org.springframework.stereotype.Component
 @RequiredArgsConstructor
 @Slf4j
 public class DataLoader implements CommandLineRunner {
@@ -43,30 +43,33 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void loadInitialData() {
-        log.info("Loading minimal test data...");
+        log.info("Loading default users...");
+        List<User> users = createUsers();
+        userRepository.saveAll(users);
+        log.info("Default users created: admin@stays.in, user@stays.in, owner@stays.in");
 
         // Create only one test user
-        User testUser = new User("Test", "User", "test@test.com", 
+        User testUser = new User("Test", "User", "test@test.com",
                 passwordEncoder.encode("test123"), LocalDate.of(1990, 1, 1), 0, "1234567890", "Test Address");
         testUser.setUserRole(UserRole.ROLE_CUSTOMER);
         testUser.setAccountStatus("ACTIVE");
-        
+
         userRepository.save(testUser);
         log.info("Test user created: test@test.com / test123");
     }
 
     private List<User> createUsers() {
-        User admin = new User("Admin", "User", "admin@stays.in", 
+        User admin = new User("Admin", "User", "admin@stays.in",
                 passwordEncoder.encode("admin123"), LocalDate.of(1990, 1, 1), 0, "1234567890", "Admin Address");
         admin.setUserRole(UserRole.ROLE_ADMIN);
         admin.setAccountStatus("ACTIVE");
 
-        User customer = new User("John", "Customer", "user@stays.in", 
+        User customer = new User("John", "Customer", "user@stays.in",
                 passwordEncoder.encode("password123"), LocalDate.of(1995, 5, 15), 0, "9876543210", "Customer Address");
         customer.setUserRole(UserRole.ROLE_CUSTOMER);
         customer.setAccountStatus("ACTIVE");
 
-        User hotelManager = new User("Hotel", "Manager", "owner@stays.in", 
+        User hotelManager = new User("Hotel", "Manager", "owner@stays.in",
                 passwordEncoder.encode("owner123"), LocalDate.of(1985, 3, 10), 0, "5555555555", "Manager Address");
         hotelManager.setUserRole(UserRole.ROLE_HOTEL_MANAGER);
         hotelManager.setAccountStatus("ACTIVE");

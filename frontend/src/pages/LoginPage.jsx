@@ -23,10 +23,10 @@ const LoginPage = () => {
                 const user = result.user;
 
                 // Role-based redirect
-                if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'hotel_admin') {
+                if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'hotel_admin' || user.role === 'ROLE_ADMIN') {
                     toast.success(`Welcome back, ${user.name}!`);
                     navigate('/admin/dashboard');
-                } else if (user.role === 'owner') {
+                } else if (user.role === 'owner' || user.role === 'ROLE_HOTEL_MANAGER') {
                     toast.success(`Welcome back, ${user.name}!`);
                     navigate('/owner/dashboard');
                 } else {

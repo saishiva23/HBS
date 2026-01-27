@@ -15,12 +15,13 @@ import {
     FaFire,
     FaBolt,
     FaCheckCircle,
+    FaTrash,
 } from 'react-icons/fa';
 
 const HotelProfileManagement = () => {
     const { selectedHotel } = useHotel();
     const [isLoading, setIsLoading] = useState(false);
-    
+
     const [hotelData, setHotelData] = useState({
         name: '',
         category: 'Standard',
@@ -69,12 +70,12 @@ const HotelProfileManagement = () => {
                 description: data.description || '',
                 // Missing fields in backend will remain blank or default
             });
-            
+
             // Parse amenities/images if needed, or if API returns list for DTO
             // ownerHotelManagement.getHotel returns HotelDTO which has List<String> images/amenities.
-            setAmenities( Array.isArray(data.amenities) ? data.amenities.join(', ') : (data.amenities || '') );
-            setImages( Array.isArray(data.images) ? data.images : [] );
-            
+            setAmenities(Array.isArray(data.amenities) ? data.amenities.join(', ') : (data.amenities || ''));
+            setImages(Array.isArray(data.images) ? data.images : []);
+
         } catch (error) {
             console.error("Failed to fetch hotel details", error);
         } finally {
@@ -93,7 +94,7 @@ const HotelProfileManagement = () => {
     // Image upload handler (Mock - just adds base64 or placeholder)
     const handleImageUpload = (files) => {
         if (!files || files.length === 0) return;
-        
+
         files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -400,33 +401,46 @@ const HotelProfileManagement = () => {
                                     </span>
                                 </div>
 
-                                {/* Upload Zone */}
-                                <div 
-                                    className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-2xl p-8 text-center hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/10 transition-all cursor-pointer"
-                                    onClick={() => document.getElementById('hotel-image-upload').click()}
-                                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-yellow-500', 'bg-yellow-50'); }}
-                                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-yellow-500', 'bg-yellow-50'); }}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        e.currentTarget.classList.remove('border-yellow-500', 'bg-yellow-50');
-                                        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                                        handleImageUpload(files);
-                                    }}
-                                >
-                                    <input
-                                        id="hotel-image-upload"
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={(e) => handleImageUpload(Array.from(e.target.files))}
-                                        className="hidden"
-                                    />
-                                    <FaImage className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Drop images here or click to upload
-                                    </h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Supports JPG, PNG, WebP • Max 5MB per image
+                                {/* Image Link Input */}
+                                <div className="bg-white dark:bg-gray-700 p-6 rounded-2xl border border-gray-200 dark:border-gray-600">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Image Link</h3>
+                                    <div className="flex gap-4">
+                                        <input
+                                            type="url"
+                                            placeholder="Paste image URL here (e.g. https://example.com/hotel.jpg)"
+                                            className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    const val = e.target.value;
+                                                    if (val) {
+                                                        const validUrl = val.match(/^https?:\/\/.+/) ? val : `https://${val}`; // Basic validation check
+                                                        if (validUrl) {
+                                                            setImages(prev => [...prev, validUrl]);
+                                                            e.target.value = '';
+                                                        }
+                                                    }
+                                                }
+                                            }}
+                                            id="imageUrlInput"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const input = document.getElementById('imageUrlInput');
+                                                const val = input.value;
+                                                if (val) {
+                                                    const validUrl = val.match(/^https?:\/\/.+/) ? val : `https://${val}`;
+                                                    setImages(prev => [...prev, validUrl]);
+                                                    input.value = '';
+                                                }
+                                            }}
+                                            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2"
+                                        >
+                                            <FaImage />
+                                            Add Link
+                                        </button>
+                                    </div>
+                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                        Paste a direct link to an image hosted online.
                                     </p>
                                 </div>
 
@@ -436,21 +450,21 @@ const HotelProfileManagement = () => {
                                         <div key={index} className="relative aspect-video rounded-xl overflow-hidden group border border-gray-200 dark:border-gray-700">
                                             <img src={imgUrl} alt={`Hotel ${index + 1}`} className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                 {index !== 0 && (
-                                                     <button 
+                                                {index !== 0 && (
+                                                    <button
                                                         onClick={() => handleSetMainImage(index)}
                                                         className="p-2 bg-yellow-500 text-white rounded-lg text-xs font-bold"
                                                         title="Set as Main"
-                                                     >
+                                                    >
                                                         Main
-                                                     </button>
-                                                 )}
-                                                 <button
+                                                    </button>
+                                                )}
+                                                <button
                                                     onClick={() => handleDeleteImage(index)}
                                                     className="p-2 bg-red-600 text-white rounded-lg"
-                                                 >
+                                                >
                                                     <FaEnvelope className="h-4 w-4" /> {/* Reuse icon or trash */}
-                                                 </button>
+                                                </button>
                                             </div>
                                             {index === 0 && (
                                                 <span className="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-xs font-bold rounded">

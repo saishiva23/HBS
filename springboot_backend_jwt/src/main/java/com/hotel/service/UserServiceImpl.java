@@ -136,12 +136,13 @@ public class UserServiceImpl implements UserService {
 
             // Check if account is suspended
             if ("SUSPENDED".equals(user.getAccountStatus())) {
-                throw new AuthenticationFailedException("Account suspended: " + 
-                    (user.getSuspensionReason() != null ? user.getSuspensionReason() : "Contact admin"));
+                throw new AuthenticationFailedException("Account suspended: " +
+                        (user.getSuspensionReason() != null ? user.getSuspensionReason() : "Contact admin"));
             }
 
             String jwtToken = jwtUtils.generateToken(user.getEmail(), user.getUserRole().name(), user.getId());
-            return new AuthResp(jwtToken, "Login successful");
+            return new AuthResp(jwtToken, "Login successful", user.getUserRole().name(),
+                    user.getFirstName() + " " + user.getLastName());
         } catch (Exception e) {
             log.error("Authentication failed for user: {}", request.getEmail(), e);
             throw new AuthenticationFailedException(e.getMessage());

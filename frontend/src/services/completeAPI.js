@@ -37,10 +37,11 @@ export const publicAPI = {
   searchHotels: (city, destination) => api.get('/hotels/search', { params: { city, destination } }),
   getHotelRooms: (hotelId) => api.get(`/hotels/${hotelId}/rooms`),
   getDestinations: (type) => api.get('/hotels/destinations', { params: { type } }),
-  checkAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms) => 
+  checkAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms) =>
     api.get(`/hotels/${hotelId}/rooms/${roomTypeId}/availability`, {
       params: { checkIn, checkOut, rooms }
     }),
+  registerHotelWithUser: (registrationData) => api.post('/hotels/register-public', registrationData),
 };
 
 // ============ CUSTOMER APIs (ROLE_CUSTOMER) ============
@@ -49,24 +50,24 @@ export const customerAPI = {
   // Auth
   login: (email, password) => api.post('/users/signin', { email, password }),
   register: (userData) => api.post('/users/signup', userData),
-  
+
   // Profile
   getProfile: () => api.get('/users/profile'),
   updateProfile: (userData) => api.put('/users/profile', userData),
-  changePassword: (currentPassword, newPassword) => 
+  changePassword: (currentPassword, newPassword) =>
     api.patch('/users/change-password', null, { params: { currentPassword, newPassword } }),
-  
+
   // Bookings
   createBooking: (bookingData) => api.post('/bookings', bookingData),
   getMyBookings: () => api.get('/bookings/my-bookings'),
   updateBooking: (bookingId, data) => api.put(`/bookings/${bookingId}`, data),
   cancelBooking: (bookingId) => api.delete(`/bookings/${bookingId}`),
-  
+
   // Reviews
   createReview: (reviewData) => api.post('/reviews', reviewData),
   getHotelReviews: (hotelId) => api.get(`/reviews/hotel/${hotelId}`),
   getMyReviews: () => api.get('/reviews/my-reviews'),
-  
+
   // Recently Viewed
   addRecentlyViewed: (hotelId) => api.post(`/recently-viewed/hotel/${hotelId}`),
   getRecentlyViewed: () => api.get('/recently-viewed'),
@@ -81,21 +82,38 @@ export const ownerAPI = {
   createHotel: (hotelData) => api.post('/owner/hotels', hotelData),
   updateHotel: (hotelId, hotelData) => api.put(`/owner/hotels/${hotelId}`, hotelData),
   deleteHotel: (hotelId) => api.delete(`/owner/hotels/${hotelId}`),
-  
+
   // Room Type Management
   getHotelRooms: (hotelId) => api.get(`/owner/hotels/${hotelId}/rooms`),
   addRoomType: (hotelId, roomData) => api.post(`/owner/hotels/${hotelId}/rooms`, roomData),
   updateRoomType: (hotelId, roomId, roomData) => api.put(`/owner/hotels/${hotelId}/rooms/${roomId}`, roomData),
   deleteRoomType: (hotelId, roomId) => api.delete(`/owner/hotels/${hotelId}/rooms/${roomId}`),
-  
+
+  // Individual Room List Management
+  getHotelRoomsList: (hotelId) => api.get(`/owner/hotels/${hotelId}/room-list`),
+  addRoomToList: (hotelId, roomData) => api.post(`/owner/hotels/${hotelId}/room-list`, roomData),
+  updateRoomInList: (hotelId, roomId, roomData) => api.put(`/owner/hotels/${hotelId}/room-list/${roomId}`, roomData),
+  deleteRoomFromList: (hotelId, roomId) => api.delete(`/owner/hotels/${hotelId}/room-list/${roomId}`),
+
   // Booking Management
   getMyBookings: () => api.get('/owner/bookings'),
   getHotelBookings: (hotelId) => api.get(`/owner/hotels/${hotelId}/bookings`),
-  updateBookingStatus: (bookingId, status) => 
+  updateBookingStatus: (bookingId, status) =>
     api.patch(`/owner/bookings/${bookingId}/status`, null, { params: { status } }),
-  
+
   // Dashboard
   getDashboardStats: () => api.get('/owner/dashboard/stats'),
+
+  // Customer Experience
+  getHotelReviews: (hotelId) => api.get(`/owner/hotels/${hotelId}/reviews`),
+  getReviewStats: (hotelId) => api.get(`/owner/hotels/${hotelId}/reviews/stats`),
+  getHotelComplaints: (hotelId) => api.get(`/owner/hotels/${hotelId}/complaints`),
+  resolveComplaint: (complaintId, resolution) =>
+    api.put(`/owner/complaints/${complaintId}/resolve`, { resolution }),
+
+  // Payment Management
+  getPaymentHistory: (hotelId) => api.get(`/owner/hotels/${hotelId}/payments`),
+  getPaymentStats: (hotelId) => api.get(`/owner/hotels/${hotelId}/payments/stats`),
 };
 
 // ============ ADMIN APIs (ROLE_ADMIN) ============
@@ -106,22 +124,22 @@ export const adminAPI = {
   getApprovedHotels: () => api.get('/hotels/status/APPROVED'),
   getRejectedHotels: () => api.get('/hotels/status/REJECTED'),
   approveHotel: (hotelId) => api.patch(`/hotels/${hotelId}/status`, null, { params: { status: 'APPROVED' } }),
-  rejectHotel: (hotelId, reason) => 
+  rejectHotel: (hotelId, reason) =>
     api.patch(`/hotels/${hotelId}/status`, null, { params: { status: 'REJECTED', reason } }), // reason not handled in backend yet but good to pass
-  
+
   // Payment Management
   getAllPayments: () => api.get('/bookings'),
   getPendingPayments: () => api.get('/bookings?paymentStatus=PENDING'), // Backend might need filter support
   getCompletedPayments: () => api.get('/bookings?paymentStatus=COMPLETED'),
   getFailedPayments: () => api.get('/bookings?paymentStatus=FAILED'),
-  
+
   // User Management
   getAllUsers: () => api.get('/admin/users'),
   getSuspendedUsers: () => api.get('/admin/users/suspended'),
-  suspendUser: (userId, reason) => 
+  suspendUser: (userId, reason) =>
     api.patch(`/admin/users/${userId}/suspend`, null, { params: { reason } }),
   activateUser: (userId) => api.patch(`/admin/users/${userId}/activate`),
-  
+
   // Platform Bookings
   getAllBookings: () => api.get('/bookings'),
 };
@@ -129,7 +147,7 @@ export const adminAPI = {
 // ============ INVOICE SERVICE (.NET) ============
 
 export const invoiceAPI = {
-  generateInvoice: (invoiceData) => 
+  generateInvoice: (invoiceData) =>
     axios.post('http://localhost:5000/api/invoice/generate', invoiceData, {
       responseType: 'blob',
     }),
@@ -148,7 +166,7 @@ export const searchPage = {
   searchWithFilters: (filters) => publicAPI.searchHotels(filters.city, filters.destination),
   getHotelDetails: (hotelId) => publicAPI.getHotel(hotelId),
   getHotelRooms: (hotelId) => publicAPI.getHotelRooms(hotelId),
-  checkAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms) => 
+  checkAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms) =>
     publicAPI.checkAvailability(hotelId, roomTypeId, checkIn, checkOut, rooms),
 };
 
@@ -156,7 +174,7 @@ export const searchPage = {
 export const hotelDetailsPage = {
   loadHotel: (hotelId) => publicAPI.getHotel(hotelId),
   loadRooms: (hotelId) => publicAPI.getHotelRooms(hotelId),
-  checkAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms) => 
+  checkAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms) =>
     publicAPI.checkAvailability(hotelId, roomTypeId, checkIn, checkOut, rooms),
 };
 
@@ -196,6 +214,12 @@ export const ownerRoomManagement = {
   addRoom: (hotelId, roomData) => ownerAPI.addRoomType(hotelId, roomData),
   updateRoom: (hotelId, roomId, roomData) => ownerAPI.updateRoomType(hotelId, roomId, roomData),
   deleteRoom: (hotelId, roomId) => ownerAPI.deleteRoomType(hotelId, roomId),
+
+  // Individual room list management
+  getRoomsList: (hotelId) => ownerAPI.getHotelRoomsList(hotelId),
+  addRoomToList: (hotelId, roomData) => ownerAPI.addRoomToList(hotelId, roomData),
+  updateRoomInList: (hotelId, roomId, roomData) => ownerAPI.updateRoomInList(hotelId, roomId, roomData),
+  deleteRoomFromList: (hotelId, roomId) => ownerAPI.deleteRoomFromList(hotelId, roomId),
 };
 
 // HOTEL OWNER - BOOKING MANAGEMENT
@@ -203,6 +227,23 @@ export const ownerBookingManagement = {
   getAllBookings: () => ownerAPI.getMyBookings(),
   getHotelBookings: (hotelId) => ownerAPI.getHotelBookings(hotelId),
   updateStatus: (bookingId, status) => ownerAPI.updateBookingStatus(bookingId, status),
+};
+
+// HOTEL OWNER - CUSTOMER EXPERIENCE
+export const ownerCustomerExperience = {
+  // Reviews
+  getHotelReviews: (hotelId) => ownerAPI.getHotelReviews(hotelId),
+  getReviewStats: (hotelId) => ownerAPI.getReviewStats(hotelId),
+
+  // Complaints
+  getHotelComplaints: (hotelId) => ownerAPI.getHotelComplaints(hotelId),
+  resolveComplaint: (complaintId, resolution) => ownerAPI.resolveComplaint(complaintId, resolution),
+};
+
+// HOTEL OWNER - PAYMENT MANAGEMENT
+export const ownerPayment = {
+  getHistory: (hotelId) => ownerAPI.getPaymentHistory(hotelId),
+  getStats: (hotelId) => ownerAPI.getPaymentStats(hotelId),
 };
 
 // ADMIN - HOTEL APPROVALS
@@ -242,7 +283,7 @@ export default {
   owner: ownerAPI,
   admin: adminAPI,
   invoice: invoiceAPI,
-  
+
   // Page integrations
   homePage,
   searchPage,

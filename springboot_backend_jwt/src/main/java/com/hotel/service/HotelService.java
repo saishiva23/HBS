@@ -25,4 +25,8 @@ public interface HotelService {
     Hotel updateHotelStatus(Long hotelId, String status);
 
     List<com.hotel.dtos.DestinationDTO> getPopularDestinations(String type); // type: city, state
+
+    Hotel registerHotelWithUser(com.hotel.dtos.HotelRegistrationDTO registrationDTO);
+
+    com.hotel.dtos.AuthResp registerHotelWithUserAndAuthenticate(com.hotel.dtos.HotelRegistrationDTO registrationDTO);
 }

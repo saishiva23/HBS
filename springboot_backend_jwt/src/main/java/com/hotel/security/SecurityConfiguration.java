@@ -39,10 +39,13 @@ public class SecurityConfiguration {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/", "/error", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/api/users/signin",
-                                "/api/users/signup", "/api/users/generate-hash", "/api/users/debug-password", "/api/users/fix-passwords")
+                        .requestMatchers("/", "/error", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                                "/api/users/signin",
+                                "/api/users/signup", "/api/users/generate-hash", "/api/users/debug-password",
+                                "/api/users/fix-passwords")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/hotels/register-public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/hotels").hasAuthority("ROLE_HOTEL_MANAGER")
                         .requestMatchers("/api/bookings/**").hasAnyAuthority("ROLE_CUSTOMER", "ROLE_ADMIN")

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hotel.dtos.HotelDTO;
+import com.hotel.dtos.HotelRegistrationDTO;
 import com.hotel.dtos.RoomTypeDTO;
 import com.hotel.entities.Hotel;
 import com.hotel.entities.RoomType;
@@ -77,6 +78,12 @@ public class HotelController {
     public ResponseEntity<Hotel> registerHotel(@RequestBody @Valid HotelDTO hotelDTO,
             java.security.Principal principal) {
         return ResponseEntity.ok(hotelService.addNewHotel(hotelDTO, principal.getName()));
+    }
+
+    @PostMapping("/register-public")
+    public ResponseEntity<com.hotel.dtos.AuthResp> registerHotelPublic(
+            @RequestBody @Valid HotelRegistrationDTO registrationDTO) {
+        return ResponseEntity.ok(hotelService.registerHotelWithUserAndAuthenticate(registrationDTO));
     }
 
     @org.springframework.web.bind.annotation.PatchMapping("/{id}/status")

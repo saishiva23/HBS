@@ -106,9 +106,9 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
                                         <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
                                             {selectedHotel?.name}
                                         </p>
-                                        {user?.role !== 'Hotel Owner' ? (
+                                        {(user?.role !== 'Hotel Owner' && user?.role !== 'ROLE_HOTEL_MANAGER') ? (
                                             <p className="text-gray-600 dark:text-gray-400 text-xs truncate">
-                                                You are logged in as <strong>{user?.name}</strong> ({user?.role}), but you need to be a <strong>Hotel Owner</strong> to access this panel.
+                                                You are logged in as <strong>{user?.name}</strong>, but need owner access.
                                             </p>
                                         ) : (
                                             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -129,33 +129,32 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
                                         <FaExchangeAlt className="h-3 w-3" />
                                         Switch Hotel
                                     </p>
-                                    {hotels.map((hotel) => (
-                                        <button
-                                            key={hotel.id}
-                                            onClick={() => handleHotelSelect(hotel.id)}
-                                            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${selectedHotel?.id === hotel.id
-                                                ? 'bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 border border-yellow-300 dark:border-yellow-700'
-                                                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                                }`}
-                                        >
-                                            <img
-                                                src={hotel.image}
-                                                alt={hotel.name}
-                                                className="h-10 w-10 rounded-lg object-cover"
-                                            />
-                                            <div className="flex-1 text-left">
-                                                <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                                                    {hotel.name}
-                                                </p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {hotel.location} • {hotel.totalRooms} rooms
-                                                </p>
-                                            </div>
-                                            {selectedHotel?.id === hotel.id && (
-                                                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-                                            )}
-                                        </button>
-                                    ))}
+                                    {hotels
+                                        .filter(hotel => hotel.id !== selectedHotel?.id)
+                                        .map((hotel) => (
+                                            <button
+                                                key={hotel.id}
+                                                onClick={() => handleHotelSelect(hotel.id)}
+                                                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                            >
+                                                <img
+                                                    src={hotel.image}
+                                                    alt={hotel.name}
+                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                />
+                                                <div className="flex-1 text-left">
+                                                    <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                                                        {hotel.name}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {hotel.location} • {hotel.totalRooms} rooms
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    {hotels.length <= 1 && (
+                                        <p className="px-3 py-2 text-xs text-gray-400 italic">No other hotels available.</p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -202,25 +201,65 @@ const OwnerNavigation = ({ isCollapsed, setIsCollapsed }) => {
                 <div className={`border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-all duration-300 ${isCollapsed ? 'p-3' : 'p-6'}`}>
                     <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex-shrink-0 flex items-center justify-center text-white font-bold shadow-md">
-                            JD
+                            {(() => {
+                                const userData = localStorage.getItem('user');
+                                if (userData) {
+                                    try {
+                                        const parsedUser = JSON.parse(userData);
+                                        const nameParts = parsedUser.name?.split(' ') || ['U'];
+                                        return nameParts.map(part => part[0]?.toUpperCase() || '').join('').slice(0, 2);
+                                    } catch {
+                                        return 'U';
+                                    }
+                                }
+                                return 'U';
+                            })()}
                         </div>
                         {!isCollapsed && (
                             <div className="truncate">
-                                <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">John Doe</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Hotel Owner</p>
+                                <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                                    {(() => {
+                                        const userData = localStorage.getItem('user');
+                                        if (userData) {
+                                            try {
+                                                const parsedUser = JSON.parse(userData);
+                                                return parsedUser.name || 'Hotel Owner';
+                                            } catch {
+                                                return 'Hotel Owner';
+                                            }
+                                        }
+                                        return 'Hotel Owner';
+                                    })()}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {(() => {
+                                        const userData = localStorage.getItem('user');
+                                        if (userData) {
+                                            try {
+                                                const parsedUser = JSON.parse(userData);
+                                                return parsedUser.role?.replace('ROLE_', '').replace('_', ' ') || 'Hotel Manager';
+                                            } catch {
+                                                return 'Hotel Manager';
+                                            }
+                                        }
+                                        return 'Hotel Manager';
+                                    })()}
+                                </p>
                             </div>
                         )}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Overlay for mobile */}
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                ></div>
-            )}
+            {
+                isMobileMenuOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    ></div>
+                )
+            }
         </>
     );
 };

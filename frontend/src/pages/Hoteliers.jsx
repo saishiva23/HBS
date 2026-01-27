@@ -15,7 +15,7 @@ import {
   FaTimes,
   FaCheckCircle,
 } from 'react-icons/fa';
-import { ownerAPI } from '../services/completeAPI';
+import { ownerAPI, publicAPI } from '../services/completeAPI';
 
 const Hoteliers = () => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const Hoteliers = () => {
     // Owner Details
     ownerName: '',
     ownerEmail: '',
+    password: '',
     ownerPhone: '',
     // Hotel Details
     hotelName: '',
@@ -102,15 +103,8 @@ const Hoteliers = () => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Check if user is logged in
       const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please login as Hotel Manager to register your property');
-        navigate('/login');
-        return;
-      }
 
-      // Prepare hotel data for API
       const hotelData = {
         name: formData.hotelName,
         city: formData.city,
@@ -123,15 +117,51 @@ const Hoteliers = () => {
         images: [] // Empty for now
       };
 
-      // Call API to create hotel
-      await ownerAPI.createHotel(hotelData);
-      
-      alert('Hotel registered successfully! Status: PENDING. Admin will review and approve your property.');
+      if (token) {
+        // Logged in: Create hotel only
+        await ownerAPI.createHotel(hotelData);
+        alert('Hotel registered successfully! Your property is now active and ready for bookings.');
+        navigate('/owner/dashboard');
+      } else {
+        // Public: Create User + Hotel with Auto-Login
+        const nameParts = formData.ownerName.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Owner';
+
+        const registrationData = {
+          user: {
+            firstName: firstName,
+            lastName: lastName,
+            email: formData.ownerEmail,
+            password: formData.password,
+            phone: formData.ownerPhone
+          },
+          hotel: hotelData
+        };
+
+        // Backend now returns AuthResp with JWT token
+        const response = await publicAPI.registerHotelWithUser(registrationData);
+
+        // Store authentication data
+        if (response.jwt) {
+          localStorage.setItem('token', response.jwt);
+          localStorage.setItem('user', JSON.stringify({
+            name: response.name,
+            email: formData.ownerEmail,
+            role: response.role
+          }));
+        }
+
+        alert('Hotel registered successfully! You are now logged in. Your property is active and ready for bookings.');
+      }
+
+      // Reset form
       setShowRegistrationForm(false);
       setRegistrationStep(1);
       setFormData({
         ownerName: '',
         ownerEmail: '',
+        password: '',
         ownerPhone: '',
         hotelName: '',
         hotelType: 'Hotel',
@@ -144,12 +174,25 @@ const Hoteliers = () => {
         pincode: '',
         amenities: [],
       });
-      
-      // Redirect to owner dashboard
+
+      // Navigate to dashboard at the very end
       navigate('/owner/dashboard');
+
     } catch (error) {
       console.error('Hotel registration error:', error);
-      alert(error.message || 'Failed to register hotel. Please try again.');
+
+      // Extract error message from response
+      let errorMessage = 'Failed to register hotel. Please try again.';
+
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error) {
+        errorMessage = error.error;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -353,8 +396,8 @@ const Hoteliers = () => {
                   <div
                     key={step}
                     className={`flex-1 h-2 rounded-full transition-all ${step <= registrationStep
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                        : 'bg-gray-200 dark:bg-gray-700'
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                      : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                   />
                 ))}
@@ -394,6 +437,20 @@ const Hoteliers = () => {
                         className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
                       />
                     </div>
+                    {!localStorage.getItem('token') && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          Password *
+                        </label>
+                        <input
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="Create a password"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Phone Number *
@@ -537,8 +594,8 @@ const Hoteliers = () => {
                         type="button"
                         onClick={() => handleAmenityToggle(amenity)}
                         className={`px-4 py-3 rounded-xl font-medium text-sm transition-all ${formData.amenities.includes(amenity)
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                           }`}
                       >
                         {formData.amenities.includes(amenity) && <FaCheck className="inline mr-2 h-3 w-3" />}

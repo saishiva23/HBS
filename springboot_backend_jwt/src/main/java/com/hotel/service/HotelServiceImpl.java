@@ -13,6 +13,11 @@ import com.hotel.entities.RoomType;
 import com.hotel.repository.HotelRepository;
 import com.hotel.repository.RoomTypeRepository;
 import com.hotel.repository.RoomRepository;
+import com.hotel.custom_exceptions.InvalidInputException;
+import com.hotel.dtos.HotelRegistrationDTO;
+import com.hotel.dtos.UserRegDTO;
+import com.hotel.entities.UserRole;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.hotel.repository.BookingRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +35,9 @@ public class HotelServiceImpl implements HotelService {
     private final BookingRepository bookingRepository;
     private final com.hotel.repository.UserRepository userRepository;
     private final ModelMapper modelMapper;
-    // private final ObjectMapper objectMapper; // Unused
+    private final PasswordEncoder passwordEncoder;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final com.hotel.security.JwtUtils jwtUtils;
 
     @Override
     public List<Hotel> getAllHotels() {
@@ -133,9 +140,22 @@ public class HotelServiceImpl implements HotelService {
 
             // 3. Set Defaults & Relationships
             hotel.setOwner(owner);
-            hotel.setStatus("PENDING"); // Default status for approval workflow
+            hotel.setStatus("APPROVED"); // Auto-approve all hotels (admin approval bypassed)
             hotel.setRating(0.0);
             hotel.setRatingCount(0);
+
+            // Handle JSON fields manually
+            try {
+                if (hotelDTO.getAmenities() != null) {
+                    hotel.setAmenities(objectMapper.writeValueAsString(hotelDTO.getAmenities()));
+                }
+                if (hotelDTO.getImages() != null) {
+                    hotel.setImages(objectMapper.writeValueAsString(hotelDTO.getImages()));
+                }
+            } catch (Exception e) {
+                log.error("Error serializing hotel JSON fields", e);
+                // continue, fields will be null or whatever mapper set
+            }
 
             // 4. Save
             Hotel savedHotel = hotelRepository.save(hotel);
@@ -248,4 +268,113 @@ public class HotelServiceImpl implements HotelService {
             return new java.util.ArrayList<>();
         }
     }
+
+    @Override
+    public Hotel registerHotelWithUser(HotelRegistrationDTO registrationDTO) {
+        log.info("Registering new hotel with new user: {}", registrationDTO.getUser().getEmail());
+
+        // 1. Create User
+        UserRegDTO userDTO = registrationDTO.getUser();
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            throw new InvalidInputException("User already exists with this email");
+        }
+
+        com.hotel.entities.User user = modelMapper.map(userDTO, com.hotel.entities.User.class);
+        user.setUserRole(UserRole.ROLE_HOTEL_MANAGER); // Explicitly set as Manager
+        user.setAccountStatus("ACTIVE");
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        com.hotel.entities.User savedUser = userRepository.save(user);
+        log.info("User created with ID: {}", savedUser.getId());
+
+        // 2. Create Hotel
+        HotelDTO hotelDTO = registrationDTO.getHotel();
+        Hotel hotel = modelMapper.map(hotelDTO, Hotel.class);
+
+        hotel.setOwner(savedUser);
+        hotel.setStatus("PENDING");
+        hotel.setRating(0.0);
+        hotel.setRatingCount(0);
+
+        // Handle JSON fields manually
+        try {
+            if (hotelDTO.getAmenities() != null) {
+                hotel.setAmenities(objectMapper.writeValueAsString(hotelDTO.getAmenities()));
+            }
+            if (hotelDTO.getImages() != null) {
+                hotel.setImages(objectMapper.writeValueAsString(hotelDTO.getImages()));
+            }
+        } catch (Exception e) {
+            log.error("Error serializing hotel JSON fields", e);
+        }
+
+        Hotel savedHotel = hotelRepository.save(hotel);
+        log.info("Hotel registered with ID: {}", savedHotel.getId());
+
+        return savedHotel;
+    }
+
+    @Override
+    public com.hotel.dtos.AuthResp registerHotelWithUserAndAuthenticate(HotelRegistrationDTO registrationDTO) {
+        log.info("Registering new hotel with new user and auto-login: {}", registrationDTO.getUser().getEmail());
+
+        // 1. Create User
+        UserRegDTO userDTO = registrationDTO.getUser();
+
+        // Check for duplicate email
+        if (userRepository.existsByEmail(userDTO.getEmail())) {
+            throw new InvalidInputException(
+                    "Email already registered. Please use a different email or login to your existing account.");
+        }
+
+        com.hotel.entities.User user = modelMapper.map(userDTO, com.hotel.entities.User.class);
+        user.setUserRole(UserRole.ROLE_HOTEL_MANAGER); // Explicitly set as Manager
+        user.setAccountStatus("ACTIVE");
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        com.hotel.entities.User savedUser = userRepository.save(user);
+        log.info("User created with ID: {}", savedUser.getId());
+
+        // 2. Create Hotel
+        HotelDTO hotelDTO = registrationDTO.getHotel();
+        Hotel hotel = modelMapper.map(hotelDTO, Hotel.class);
+
+        hotel.setOwner(savedUser);
+        hotel.setStatus("APPROVED"); // Auto-approve all hotels (admin approval bypassed)
+        hotel.setRating(0.0);
+        hotel.setRatingCount(0);
+
+        // Handle JSON fields manually
+        try {
+            if (hotelDTO.getAmenities() != null) {
+                hotel.setAmenities(objectMapper.writeValueAsString(hotelDTO.getAmenities()));
+            }
+            if (hotelDTO.getImages() != null) {
+                hotel.setImages(objectMapper.writeValueAsString(hotelDTO.getImages()));
+            }
+        } catch (Exception e) {
+            log.error("Error serializing hotel JSON fields", e);
+        }
+
+        Hotel savedHotel = hotelRepository.save(hotel);
+        log.info("Hotel registered with ID: {}", savedHotel.getId());
+
+        // 3. Generate JWT Token for auto-login
+        String token = jwtUtils.generateToken(
+                savedUser.getEmail(),
+                savedUser.getUserRole().name(),
+                savedUser.getId());
+
+        String fullName = savedUser.getFirstName() + " " + savedUser.getLastName();
+
+        com.hotel.dtos.AuthResp authResp = new com.hotel.dtos.AuthResp();
+        authResp.setJwt(token);
+        authResp.setMessage("Registration successful! Welcome to HBS.");
+        authResp.setRole(savedUser.getUserRole().name());
+        authResp.setName(fullName);
+
+        log.info("Authentication response created for user: {}", savedUser.getEmail());
+        return authResp;
+    }
+
 }

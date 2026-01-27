@@ -49,7 +49,7 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING) // column type - varchar | Enum
     @Column(name = "user_role")
     private UserRole userRole;
-    @Column(unique = true, length = 14)
+    @Column(length = 14)
     private String phone;
     @Column(length = 255)
     private String address;

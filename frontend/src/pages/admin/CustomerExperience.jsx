@@ -1,222 +1,378 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import OwnerLayout from '../../layouts/OwnerLayout';
+import { useHotel } from '../../context/HotelContext';
+import { ownerCustomerExperience } from '../../services/completeAPI';
 import {
     FaStar,
-    FaComments,
+    FaCommentDots,
     FaExclamationCircle,
     FaCheckCircle,
-    FaClock,
     FaSearch,
     FaFilter,
     FaReply,
-    FaEllipsisV,
-    FaSync
+    FaUser,
+    FaCalendarAlt,
+    FaEnvelope
 } from 'react-icons/fa';
-import OwnerLayout from '../../layouts/OwnerLayout';
-import { mockComplaints } from '../../data/experienceData';
 
 const CustomerExperience = () => {
-    const [activeTab, setActiveTab] = useState('reviews');
+    const { selectedHotel } = useHotel();
+    const [activeTab, setActiveTab] = useState('reviews'); // 'reviews' or 'complaints'
+    const [reviews, setReviews] = useState([]);
+    const [complaints, setComplaints] = useState([]);
+    const [stats, setStats] = useState({
+        overallRating: 0,
+        newReviews: 0,
+        pendingComplaints: 0,
+        resolutionRate: 0
+    });
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // Mock Reviews (derived from earlier data)
-    const [reviews, setReviews] = useState([
-        { id: 1, guest: 'John Smith', rating: 5, comment: 'Excellent stay!', date: '2026-01-20', status: 'Published', room: 'Deluxe' },
-        { id: 2, guest: 'Emma Johnson', rating: 4, comment: 'Great location.', date: '2026-01-18', status: 'Published', room: 'Standard AC' },
-        { id: 3, guest: 'Michael Brown', rating: 3, comment: 'Average experience.', date: '2026-01-15', status: 'Pending', room: 'Standard' },
-    ]);
+    const [resolvingId, setResolvingId] = useState(null);
+    const [resolutionText, setResolutionText] = useState('');
 
-    const [complaints, setComplaints] = useState(mockComplaints);
+    useEffect(() => {
+        if (selectedHotel) {
+            fetchData();
+        }
+    }, [selectedHotel]);
 
-    const stats = [
-        { label: 'Overall Rating', value: '4.6/5', icon: FaStar, color: 'from-amber-500 to-orange-600' },
-        { label: 'New Reviews', value: '12', icon: FaComments, color: 'from-blue-500 to-indigo-600' },
-        { label: 'Pending Complaints', value: '3', icon: FaExclamationCircle, color: 'from-red-500 to-pink-600' },
-        { label: 'Resolution Rate', value: '94%', icon: FaCheckCircle, color: 'from-emerald-500 to-teal-600' },
-    ];
+    const fetchData = async () => {
+        if (!selectedHotel) return;
+        setLoading(true);
+        try {
+            // Fetch stats, reviews, and complaints concurrently
+            const [reviewsData, statsData, complaintsData] = await Promise.all([
+                ownerCustomerExperience.getHotelReviews(selectedHotel.id),
+                ownerCustomerExperience.getReviewStats(selectedHotel.id),
+                ownerCustomerExperience.getHotelComplaints(selectedHotel.id)
+            ]);
 
-    const getStatusColor = (status) => {
-        switch (status.toLowerCase()) {
-            case 'resolved':
-            case 'published': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-            case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-            case 'in progress': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-            default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
+            const rData = reviewsData.data || reviewsData;
+            const sData = statsData.data || statsData;
+            const cData = complaintsData.data || complaintsData;
+
+            setReviews(rData);
+            setComplaints(cData);
+
+            // Calculate resolution rate
+            const resolvedCount = cData.filter(c => c.status === 'RESOLVED').length;
+            const totalComplaints = cData.length;
+            const rate = totalComplaints > 0 ? Math.round((resolvedCount / totalComplaints) * 100) : 100;
+
+            setStats({
+                overallRating: sData.averageRating || 0,
+                newReviews: sData.newReviews || 0,
+                pendingComplaints: cData.filter(c => c.status === 'PENDING').length,
+                resolutionRate: rate
+            });
+
+        } catch (error) {
+            console.error("Failed to fetch customer experience data", error);
+        } finally {
+            setLoading(false);
         }
     };
 
+    const handleResolveComplaint = async () => {
+        if (!resolutionText.trim()) return;
+
+        try {
+            await ownerCustomerExperience.resolveComplaint(resolvingId, resolutionText);
+
+            // Update local state
+            setComplaints(prev => prev.map(c =>
+                c.id === resolvingId
+                    ? { ...c, status: 'RESOLVED', resolution: resolutionText, resolvedAt: new Date().toISOString() }
+                    : c
+            ));
+
+            // Update stats (optimistic)
+            setStats(prev => ({
+                ...prev,
+                pendingComplaints: prev.pendingComplaints - 1
+            }));
+
+            // Reset modal
+            setResolvingId(null);
+            setResolutionText('');
+            alert('Complaint resolved successfully');
+        } catch (error) {
+            console.error("Failed to resolve complaint", error);
+            alert('Failed to resolve complaint');
+        }
+    };
+
+    const filteredReviews = reviews.filter(r =>
+        r.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.comment.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const filteredComplaints = complaints.filter(c =>
+        c.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (!selectedHotel) {
+        return (
+            <OwnerLayout>
+                <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                    <p className="text-xl text-gray-600 dark:text-gray-400">Please select a hotel first</p>
+                </div>
+            </OwnerLayout>
+        );
+    }
+
     return (
         <OwnerLayout>
-            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-950 transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-950 p-4 sm:p-8">
+                <div className="max-w-7xl mx-auto">
                     {/* Header */}
-                    <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                                Customer Experience ✨
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent flex items-center gap-2">
+                                Customer Experience <span className="text-2xl">✨</span>
                             </h1>
-                            <p className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">
                                 Manage guest feedback and resolve issues in real-time
                             </p>
                         </div>
-                        <div className="flex gap-3">
-                            <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md transition-all dark:text-white">
-                                <FaSync className="h-4 w-4" />
-                                Refresh
-                            </button>
+                        <button
+                            onClick={fetchData}
+                            className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg shadow-sm hover:shadow-md transition border border-gray-200 dark:border-gray-700"
+                        >
+                            Refresh
+                        </button>
+                    </div>
+
+                    {/* Stats Dashboard */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-500 mb-4">
+                                <FaStar className="w-6 h-6" />
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm">Overall Rating</p>
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.overallRating}/5</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 mb-4">
+                                <FaCommentDots className="w-6 h-6" />
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm">New Reviews</p>
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.newReviews}</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 mb-4">
+                                <FaExclamationCircle className="w-6 h-6" />
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm">Pending Complaints</p>
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.pendingComplaints}</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                            <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-500 mb-4">
+                                <FaCheckCircle className="w-6 h-6" />
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm">Resolution Rate</p>
+                            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.resolutionRate}%</p>
                         </div>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        {stats.map((stat, idx) => {
-                            const Icon = stat.icon;
-                            return (
-                                <div key={idx} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/30 transform hover:scale-105 transition-all">
-                                    <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} w-fit mb-4`}>
-                                        <Icon className="h-6 w-6 text-white" />
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Main Content Area */}
-                    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/30 overflow-hidden">
+                    {/* Content Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
                         {/* Tabs */}
-                        <div className="flex border-b border-gray-100 dark:border-gray-700">
+                        <div className="flex border-b border-gray-200 dark:border-gray-700">
                             <button
                                 onClick={() => setActiveTab('reviews')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-4 font-bold transition-all ${activeTab === 'reviews' 
-                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' 
-                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                }`}
+                                className={`flex-1 py-4 text-center font-semibold transition-colors relative ${activeTab === 'reviews'
+                                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10'
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    }`}
                             >
-                                <FaComments className="h-5 w-5" />
-                                Guest Reviews
+                                <div className="flex items-center justify-center gap-2">
+                                    <FaCommentDots />
+                                    Guest Reviews
+                                </div>
+                                {activeTab === 'reviews' && (
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-600 rounded-t-full" />
+                                )}
                             </button>
                             <button
                                 onClick={() => setActiveTab('complaints')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-4 font-bold transition-all ${activeTab === 'complaints' 
-                                    ? 'bg-gradient-to-r from-red-600 to-pink-600 text-white' 
-                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                }`}
+                                className={`flex-1 py-4 text-center font-semibold transition-colors relative ${activeTab === 'complaints'
+                                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10'
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    }`}
                             >
-                                <FaExclamationCircle className="h-5 w-5" />
-                                Guest Complaints
+                                <div className="flex items-center justify-center gap-2">
+                                    <FaExclamationCircle />
+                                    Guest Complaints
+                                </div>
+                                {activeTab === 'complaints' && (
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-red-600 rounded-t-full" />
+                                )}
                             </button>
                         </div>
 
-                        {/* Search & Filter */}
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row gap-4">
+                        {/* Search Bar */}
+                        <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 flex gap-4">
                             <div className="flex-1 relative">
-                                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input 
-                                    type="text" 
-                                    placeholder={activeTab === 'reviews' ? "Search guest name or comment..." : "Search complaint ID or issue..."}
-                                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:text-white shadow-sm"
+                                <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder={`Search ${activeTab === 'reviews' ? 'reviews' : 'complaints'}...`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
-                            <div className="flex gap-2">
-                                <button className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl font-semibold dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm">
-                                    <FaFilter className="h-4 w-4" />
-                                    Filter
-                                </button>
-                            </div>
+                            <button className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                                <FaFilter /> Filter
+                            </button>
                         </div>
 
-                        {/* List Area */}
+                        {/* Lists */}
                         <div className="p-6">
-                            {activeTab === 'reviews' ? (
-                                <div className="space-y-4">
-                                    {reviews.map((review) => (
-                                        <div key={review.id} className="p-6 bg-white dark:bg-gray-700 rounded-2xl border border-gray-100 dark:border-gray-600 shadow-sm hover:shadow-md transition-all">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                                        {review.guest.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-gray-900 dark:text-white">{review.guest}</h4>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Stayed in {review.room} • {review.date}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full">
-                                                    <FaStar className="h-4 w-4 text-amber-500" />
-                                                    <span className="font-bold text-amber-700 dark:text-amber-400">{review.rating}</span>
-                                                </div>
-                                            </div>
-                                            <p className="text-gray-700 dark:text-gray-300 mb-4 italic">"{review.comment}"</p>
-                                            <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-600">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(review.status)}`}>
-                                                    {review.status}
-                                                </span>
-                                                <div className="flex gap-2">
-                                                    <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">
-                                                        <FaReply className="h-3 w-3" />
-                                                        Respond
-                                                    </button>
-                                                    <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                                        <FaEllipsisV className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
+                            {loading ? (
+                                <div className="text-center py-12">
+                                    <p className="text-gray-500">Loading...</p>
+                                </div>
+                            ) : activeTab === 'reviews' ? (
+                                <div className="space-y-6">
+                                    {filteredReviews.length === 0 ? (
+                                        <div className="text-center py-12">
+                                            <FaCommentDots className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                            <p className="text-gray-500">No reviews found matching your search</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        filteredReviews.map((review) => (
+                                            <div key={review.id} className="bg-white dark:bg-gray-750 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                                            {review.guestName ? review.guestName.charAt(0) : 'G'}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-bold text-gray-900 dark:text-white">{review.guestName}</h3>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                                <FaCalendarAlt className="w-3 h-3" />
+                                                                {new Date(review.createdAt).toLocaleDateString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center bg-orange-100 dark:bg-orange-900/30 px-3 py-1 rounded-full">
+                                                        <FaStar className="text-orange-500 w-4 h-4 mr-1" />
+                                                        <span className="font-bold text-orange-700 dark:text-orange-400">{review.rating}</span>
+                                                    </div>
+                                                </div>
+                                                <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-2">{review.title}</h4>
+                                                <p className="text-gray-600 dark:text-gray-400 italic">"{review.comment}"</p>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {complaints.map((complaint) => (
-                                        <div key={complaint.id} className="p-6 bg-white dark:bg-gray-700 rounded-2xl border border-gray-100 dark:border-gray-600 shadow-sm hover:shadow-md transition-all">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
-                                                        complaint.priority === 'High' ? 'bg-red-500' : 'bg-amber-500'
-                                                    }`}>
-                                                        <FaExclamationCircle className="h-6 w-6" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="font-bold text-gray-900 dark:text-white">{complaint.subject}</h4>
-                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                                                complaint.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                                                            }`}>
-                                                                {complaint.priority} Priority
-                                                            </span>
+                                <div className="space-y-6">
+                                    {filteredComplaints.length === 0 ? (
+                                        <div className="text-center py-12">
+                                            <FaExclamationCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                            <p className="text-gray-500">No complaints found matching your search</p>
+                                        </div>
+                                    ) : (
+                                        filteredComplaints.map((complaint) => (
+                                            <div key={complaint.id} className="bg-white dark:bg-gray-750 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-bold text-sm">
+                                                            {complaint.guestName ? complaint.guestName.charAt(0) : 'G'}
                                                         </div>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Room {complaint.roomNumber} • {complaint.guestName} • {complaint.date}</p>
+                                                        <div>
+                                                            <h3 className="font-bold text-gray-900 dark:text-white">{complaint.guestName}</h3>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                                <FaEnvelope className="w-3 h-3" />
+                                                                {complaint.guestEmail}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="text-xs font-bold text-gray-400">
-                                                    #{complaint.id}
-                                                </div>
-                                            </div>
-                                            <p className="text-gray-700 dark:text-gray-300 mb-4">{complaint.description}</p>
-                                            <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-600">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(complaint.status)}`}>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${complaint.status === 'RESOLVED'
+                                                            ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                            : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                                                        }`}>
                                                         {complaint.status}
                                                     </span>
                                                 </div>
-                                                <div className="flex gap-2">
-                                                    <button className="px-4 py-2 bg-gray-900 dark:bg-gray-600 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors">
-                                                        Update Status
-                                                    </button>
-                                                    <button className="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold dark:text-white hover:bg-gray-50 transition-colors">
-                                                        Assign Staff
-                                                    </button>
+
+                                                <div className="mb-4">
+                                                    <h4 className="font-semibold text-lg text-gray-800 dark:text-gray-200 mb-1">{complaint.subject}</h4>
+                                                    <p className="text-gray-600 dark:text-gray-400">{complaint.description}</p>
+                                                    <p className="text-xs text-gray-400 mt-2">Submitted: {new Date(complaint.createdAt).toLocaleString()}</p>
                                                 </div>
+
+                                                {complaint.status === 'RESOLVED' ? (
+                                                    <div className="mt-4 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800 rounded-lg p-4">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <FaCheckCircle className="text-green-500" />
+                                                            <span className="font-bold text-green-700 dark:text-green-400 text-sm">Resolution</span>
+                                                        </div>
+                                                        <p className="text-gray-700 dark:text-gray-300 text-sm">{complaint.resolution}</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="mt-4 flex justify-end">
+                                                        <button
+                                                            onClick={() => setResolvingId(complaint.id)}
+                                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 text-sm font-medium"
+                                                        >
+                                                            <FaCheckCircle /> Resolve Complaint
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
+
+                {/* Resolve Complaint Modal */}
+                {resolvingId && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6 transform scale-100 transition-all">
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Resolve Complaint</h2>
+                            <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                Please describe the action taken to resolve this customer's issue.
+                            </p>
+                            <textarea
+                                value={resolutionText}
+                                onChange={(e) => setResolutionText(e.target.value)}
+                                placeholder="Enter resolution details..."
+                                className="w-full h-32 p-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none mb-6 resize-none"
+                            ></textarea>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setResolvingId(null);
+                                        setResolutionText('');
+                                    }}
+                                    className="px-5 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleResolveComplaint}
+                                    disabled={!resolutionText.trim()}
+                                    className="px-5 py-2.5 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Mark as Resolved
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </OwnerLayout>
     );

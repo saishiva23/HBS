@@ -72,5 +72,6 @@ public class Hotel extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore // Prevent lazy loading serialization errors
     private User owner; // Links to ROLE_HOTEL_MANAGER
 }

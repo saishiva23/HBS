@@ -9,7 +9,7 @@ const OwnerLayout = ({ children }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     // Check if user is authenticated and has owner role (Hotel Owner only)
-    const isAuthorized = isAuthenticated && user?.role === 'owner';
+    const isAuthorized = isAuthenticated && (user?.role === 'owner' || user?.role === 'ROLE_HOTEL_MANAGER');
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
