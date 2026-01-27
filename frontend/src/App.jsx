@@ -31,6 +31,8 @@ import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 import HotelApprovals from './pages/admin/HotelApprovals';
 import CustomerManagement from './pages/admin/CustomerManagement';
 import SystemAnalytics from './pages/admin/SystemAnalytics';
+import LocationManagement from './pages/admin/LocationManagement';
+import AdminLogs from './pages/admin/AdminLogs';
 
 // Context Providers
 import { HotelProvider } from './context/HotelContext';
@@ -73,8 +75,11 @@ function App() {
                 <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
                 <Route path="/admin/approvals" element={<HotelApprovals />} />
                 <Route path="/admin/customers" element={<CustomerManagement />} />
-                <Route path="/admin/hotels" element={<HotelOwnerCRUD />} />
+                <Route path="/admin/hotels" element={<HotelApprovals />} />
+                <Route path="/admin/locations" element={<LocationManagement />} />
+                <Route path="/admin/locations" element={<LocationManagement />} />
                 <Route path="/admin/analytics" element={<SystemAnalytics />} />
+                <Route path="/admin/logs" element={<AdminLogs />} />
               </Routes>
             </main>
             <Footer />

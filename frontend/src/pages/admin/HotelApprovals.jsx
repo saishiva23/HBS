@@ -35,13 +35,8 @@ const HotelApprovals = () => {
             } else if (filter === 'rejected') {
                 data = await adminAPI.getRejectedHotels();
             } else {
-                // Get all hotels
-                const [pending, approved, rejected] = await Promise.all([
-                    adminAPI.getPendingHotels(),
-                    adminAPI.getApprovedHotels(),
-                    adminAPI.getRejectedHotels()
-                ]);
-                data = [...pending, ...approved, ...rejected];
+                // Get all hotels (including those with null/weird status)
+                data = await adminAPI.getAllHotels();
             }
             
             // Helper to parse JSON fields safely
@@ -89,16 +84,17 @@ const HotelApprovals = () => {
 
     // Remove hotel
     const handleRemove = async (hotelId) => {
-        if (confirm('Are you sure you want to permanently remove this hotel?')) {
+        if (confirm('Are you sure you want to permanently remove this hotel? This action cannot be undone.')) {
             try {
-                // Note: You may need to add a delete endpoint in AdminController
-                alert('Remove functionality not yet implemented in backend');
-                // await adminAPI.deleteHotel(hotelId);
-                // loadHotels();
+                await adminAPI.deleteHotel(hotelId);
+                alert('Hotel removed successfully!');
+                loadHotels();
                 setSelectedHotel(null);
             } catch (error) {
                 console.error('Error removing hotel:', error);
-                alert('Failed to remove hotel');
+                // Display specific error message if backend blocks due to constraints
+                const message = error.message || 'Failed to remove hotel. It may have active bookings.';
+                alert(message);
             }
         }
     };
@@ -120,11 +116,13 @@ const HotelApprovals = () => {
                     {/* Filter Tabs */}
                     <div className="mb-6 flex gap-2 flex-wrap">
                         {[
-                            { key: 'pending', label: 'Pending', count: hotels.filter(h => h.status === 'pending').length },
-                            { key: 'approved', label: 'Approved', count: hotels.filter(h => h.status === 'approved').length },
-                            { key: 'rejected', label: 'Rejected', count: hotels.filter(h => h.status === 'rejected').length },
-                            { key: 'all', label: 'All', count: hotels.length },
-                        ].map((tab) => (
+                            { key: 'pending', label: 'Pending', status: 'PENDING' },
+                            { key: 'approved', label: 'Approved', status: 'APPROVED' },
+                            { key: 'rejected', label: 'Rejected', status: 'REJECTED' },
+                            { key: 'all', label: 'All', status: null },
+                        ].map((tab) => {
+                            const count = tab.status ? hotels.filter(h => h.status === tab.status).length : hotels.length;
+                            return (
                             <button
                                 key={tab.key}
                                 onClick={() => setFilter(tab.key)}
@@ -135,10 +133,10 @@ const HotelApprovals = () => {
                             >
                                 {tab.label}
                                 <span className={`px-2 py-0.5 rounded-full text-xs ${filter === tab.key ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                                    {tab.count}
+                                    {count}
                                 </span>
                             </button>
-                        ))}
+                        )})}
                     </div>
 
                     {/* Hotels Grid */}
@@ -162,11 +160,11 @@ const HotelApprovals = () => {
                                         className="w-full h-full object-cover"
                                     />
                                     <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold ${
-                                        hotel.status === 'pending' ? 'bg-amber-500 text-white' :
-                                        hotel.status === 'approved' ? 'bg-green-500 text-white' :
+                                        hotel.status === 'PENDING' ? 'bg-amber-500 text-white' :
+                                        hotel.status === 'APPROVED' ? 'bg-green-500 text-white' :
                                         'bg-red-500 text-white'
                                     }`}>
-                                        {hotel.status.toUpperCase()}
+                                        {hotel.status}
                                     </div>
                                 </div>
 
@@ -194,7 +192,7 @@ const HotelApprovals = () => {
                                     </div>
 
                                     {/* Rejection Reason */}
-                                    {hotel.status === 'rejected' && hotel.rejectionReason && (
+                                    {hotel.status === 'REJECTED' && hotel.rejectionReason && (
                                         <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                                             <p className="text-sm text-red-600 dark:text-red-400">
                                                 <strong>Reason:</strong> {hotel.rejectionReason}
@@ -212,7 +210,7 @@ const HotelApprovals = () => {
                                             View Details
                                         </button>
                                         
-                                        {hotel.status === 'pending' && (
+                                        {hotel.status === 'PENDING' && (
                                             <>
                                                 <button
                                                     onClick={() => handleApprove(hotel.id)}
@@ -231,7 +229,7 @@ const HotelApprovals = () => {
                                             </>
                                         )}
 
-                                        {hotel.status !== 'pending' && (
+                                        {hotel.status !== 'PENDING' && (
                                             <button
                                                 onClick={() => handleRemove(hotel.id)}
                                                 className="flex items-center gap-2 px-4 py-2 border border-red-400 text-red-600 dark:text-red-400 rounded-xl font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -290,11 +288,11 @@ const HotelApprovals = () => {
                                     </p>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                                    selectedHotel.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                    selectedHotel.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                    selectedHotel.status === 'PENDING' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                    selectedHotel.status === 'APPROVED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                                     'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                 }`}>
-                                    {selectedHotel.status.toUpperCase()}
+                                    {selectedHotel.status}
                                 </span>
                             </div>
 
@@ -306,19 +304,19 @@ const HotelApprovals = () => {
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Owner</p>
-                                    <p className="font-semibold dark:text-white">{hotel.owner?.firstName} {hotel.owner?.lastName}</p>
+                                    <p className="font-semibold dark:text-white">{selectedHotel.owner?.firstName} {selectedHotel.owner?.lastName}</p>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Contact</p>
-                                    <p className="font-semibold dark:text-white">{hotel.owner?.phoneNumber || 'N/A'}</p>
+                                    <p className="font-semibold dark:text-white">{selectedHotel.owner?.phone || 'N/A'}</p>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Rooms</p>
-                                    <p className="font-semibold dark:text-white">{selectedHotel.rooms} Rooms</p>
+                                    <p className="font-semibold dark:text-white">{selectedHotel.totalRooms || 0} Rooms</p>
                                 </div>
                                 <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Price Range</p>
-                                    <p className="font-semibold dark:text-white">{selectedHotel.priceRange}</p>
+                                    <p className="font-semibold dark:text-white">{selectedHotel.priceRange || 'N/A'}</p>
                                 </div>
                             </div>
 
@@ -335,7 +333,7 @@ const HotelApprovals = () => {
                             </div>
 
                             {/* Actions */}
-                            {selectedHotel.status === 'pending' && (
+                            {selectedHotel.status === 'PENDING' && (
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => handleApprove(selectedHotel.id)}

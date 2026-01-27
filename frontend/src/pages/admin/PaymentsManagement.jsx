@@ -10,7 +10,7 @@ import {
     FaCreditCard,
     FaMobileAlt
 } from 'react-icons/fa';
-import OwnerLayout from '../../layouts/OwnerLayout';
+import OwnerLayout from '../../layouts/AdminLayout';
 import { adminAPI } from '../../services/completeAPI';
 
 const PaymentsManagement = () => {

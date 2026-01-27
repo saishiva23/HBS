@@ -11,41 +11,67 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline';
 import { FaHotel, FaUsers, FaMoneyBillWave, FaChartLine } from 'react-icons/fa';
+import { adminSystemAnalytics } from '../../services/completeAPI';
 
 const SystemAnalytics = () => {
   const [timeRange, setTimeRange] = useState('month');
+  const [loading, setLoading] = useState(true);
+  
   const [stats, setStats] = useState({
-    totalHotels: 248,
-    totalCustomers: 15420,
-    totalBookings: 8956,
-    pendingApprovals: 12,
-    activeListings: 235
+    totalHotels: 0,
+    totalCustomers: 0,
+    totalBookings: 0,
+    totalRevenue: 0,
   });
 
-  const [recentBookings] = useState([
-    { id: 1, hotel: 'Taj Lands End', customer: 'John Doe', date: '2026-01-24', status: 'confirmed' },
-    { id: 2, hotel: 'The Oberoi', customer: 'Jane Smith', date: '2026-01-23', status: 'confirmed' },
-    { id: 3, hotel: 'ITC Maratha', customer: 'Mike Johnson', date: '2026-01-23', status: 'pending' },
-    { id: 4, hotel: 'Leela Palace', customer: 'Sarah Williams', date: '2026-01-22', status: 'confirmed' },
-    { id: 5, hotel: 'Trident', customer: 'David Brown', date: '2026-01-22', status: 'cancelled' },
-  ]);
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [topLocations, setTopLocations] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
 
-  const [topLocations] = useState([
-    { city: 'Goa', hotels: 62, bookings: 1250 },
-    { city: 'Mumbai', hotels: 45, bookings: 980 },
-    { city: 'Delhi', hotels: 38, bookings: 850 },
-    { city: 'Jaipur', hotels: 28, bookings: 620 },
-    { city: 'Udaipur', hotels: 22, bookings: 480 },
-  ]);
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
 
-  const [monthlyData] = useState([
-    { month: 'Jan', bookings: 720 },
-    { month: 'Feb', bookings: 680 },
-    { month: 'Mar', bookings: 890 },
-    { month: 'Apr', bookings: 950 },
-    { month: 'May', bookings: 1100 },
-    { month: 'Jun', bookings: 1250 },
-  ]);
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      const data = await adminSystemAnalytics.getStats();
+      
+      setStats({
+        totalHotels: data.totalHotels,
+        totalCustomers: data.totalCustomers,
+        totalBookings: data.totalBookings,
+        totalRevenue: data.totalRevenue
+      });
+
+      // Map Trends
+      setMonthlyData(data.bookingsTrend.map(t => ({
+        month: t.month,
+        bookings: t.bookings
+      })));
+
+      // Map Locations
+      setTopLocations(data.topLocations.map(l => ({
+        city: l.city,
+        hotels: l.hotels,
+        bookings: l.bookings
+      })));
+
+      // Map Recent Bookings
+      setRecentBookings(data.recentBookings.map(b => ({
+        id: b.id,
+        hotel: b.hotelName,
+        customer: `${b.guestFirstName} ${b.guestLastName}`,
+        date: b.bookingDate,
+        status: b.status.toLowerCase()
+      })));
+
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const currency = (v) => new Intl.NumberFormat('en-IN', { 
     style: 'currency', currency: 'INR', maximumFractionDigits: 0 

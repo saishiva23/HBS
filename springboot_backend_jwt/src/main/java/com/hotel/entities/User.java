@@ -15,6 +15,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
 @Entity // to declare entity class - whose life cycle will be managed by Hibernate
 @Table(name = "users") // to specify table name
 /*
@@ -38,6 +41,7 @@ public class User extends BaseEntity {
     private String email;
     // not null constraint
     @Column(nullable = false)
+    @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
     // @Transient //skips from persistence (i.e column will not be created )
     // private String confirmPassword;
@@ -54,13 +58,14 @@ public class User extends BaseEntity {
     @Column(length = 255)
     private String address;
     @Lob // column type - for Mysql : longblob
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private byte[] image;
 
     // Account management fields
-    @Column(name = "account_status")
-    private String accountStatus; // ACTIVE, SUSPENDED
+    @Column(name = "account_status", length = 20)
+    private String accountStatus = "ACTIVE"; // ACTIVE, SUSPENDED
 
-    @Column(name = "suspension_reason")
+    @Column(name = "suspension_reason", length = 100)
     private String suspensionReason;
 
     public User(String firstName, String lastName, String email, String password, LocalDate dob, Integer regAmount,

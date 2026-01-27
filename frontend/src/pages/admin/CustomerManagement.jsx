@@ -19,6 +19,7 @@ const CustomerManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [filter, setFilter] = useState('all');
+    const [customers, setCustomers] = useState([]);
 
     // Load customers from API
     useEffect(() => {
@@ -57,6 +58,18 @@ const CustomerManagement = () => {
         return matchesSearch && matchesFilter;
     });
 
+    // Suspension reasons enum
+    const suspensionReasons = [
+        { value: 'MULTIPLE_FAILED_LOGIN_ATTEMPTS', label: 'Multiple failed login attempts' },
+        { value: 'PAYMENT_FAILURES', label: 'Payment failures' },
+        { value: 'FRAUDULENT_TRANSACTIONS', label: 'Fraudulent transactions' },
+        { value: 'TERMS_AND_CONDITIONS_VIOLATION', label: 'Terms and conditions violation' },
+        { value: 'MULTIPLE_CANCELLATIONS', label: 'Multiple cancellations' },
+        { value: 'ADMIN_SUSPENDED', label: 'Suspended by admin' },
+        { value: 'ACCOUNT_UNDER_REVIEW', label: 'Account under review' },
+        { value: 'USER_REQUESTED_SUSPENSION', label: 'User requested suspension' }
+    ];
+
     // Toggle customer status (Suspend/Activate)
     const toggleStatus = async (customer) => {
         const isSuspended = customer.status === 'SUSPENDED';
@@ -69,13 +82,26 @@ const CustomerManagement = () => {
                 ));
                 alert(`User ${customer.name} activated successfully.`);
             } else {
-                // Suspend
-                const reason = prompt("Enter suspension reason:");
+                // Suspend - Show modal with dropdown
+                const reason = prompt(
+                    "Select suspension reason:\n" +
+                    suspensionReasons.map((r, i) => `${i + 1}. ${r.label}`).join('\n') +
+                    "\n\nEnter number (1-8):"
+                );
                 if (!reason) return;
-                await adminAPI.suspendUser(customer.id, reason);
+                
+                const reasonIndex = parseInt(reason) - 1;
+                if (reasonIndex < 0 || reasonIndex >= suspensionReasons.length) {
+                    alert('Invalid selection');
+                    return;
+                }
+                
+                const selectedReason = suspensionReasons[reasonIndex].label;
+                await adminAPI.suspendUser(customer.id, selectedReason);
                 setCustomers(prev => prev.map(c => 
                     c.id === customer.id ? { ...c, status: 'SUSPENDED' } : c
                 ));
+                alert(`User ${customer.name} suspended successfully.`);
             }
         } catch (error) {
             console.error("Failed to update user status", error);

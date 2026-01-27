@@ -102,18 +102,20 @@ export const ownerAPI = {
 
 export const adminAPI = {
   // Hotel Approvals
-  getPendingHotels: () => api.get('/hotels/status/PENDING'),
-  getApprovedHotels: () => api.get('/hotels/status/APPROVED'),
-  getRejectedHotels: () => api.get('/hotels/status/REJECTED'),
-  approveHotel: (hotelId) => api.patch(`/hotels/${hotelId}/status`, null, { params: { status: 'APPROVED' } }),
+  getAllHotels: () => api.get('/admin/hotels'),
+  getPendingHotels: () => api.get('/admin/hotels/pending'),
+  getApprovedHotels: () => api.get('/admin/hotels/approved'),
+  getRejectedHotels: () => api.get('/admin/hotels/rejected'),
+  approveHotel: (hotelId) => api.patch(`/admin/hotels/${hotelId}/approve`),
   rejectHotel: (hotelId, reason) => 
-    api.patch(`/hotels/${hotelId}/status`, null, { params: { status: 'REJECTED', reason } }), // reason not handled in backend yet but good to pass
+    api.patch(`/admin/hotels/${hotelId}/reject`, null, { params: { reason } }),
+  deleteHotel: (hotelId) => api.delete(`/admin/hotels/${hotelId}`),
   
   // Payment Management
-  getAllPayments: () => api.get('/bookings'),
-  getPendingPayments: () => api.get('/bookings?paymentStatus=PENDING'), // Backend might need filter support
-  getCompletedPayments: () => api.get('/bookings?paymentStatus=COMPLETED'),
-  getFailedPayments: () => api.get('/bookings?paymentStatus=FAILED'),
+  getAllPayments: () => api.get('/admin/payments'),
+  getPendingPayments: () => api.get('/admin/payments/pending'),
+  getCompletedPayments: () => api.get('/admin/payments/completed'),
+  getFailedPayments: () => api.get('/admin/payments/failed'),
   
   // User Management
   getAllUsers: () => api.get('/admin/users'),
@@ -124,6 +126,19 @@ export const adminAPI = {
   
   // Platform Bookings
   getAllBookings: () => api.get('/bookings'),
+  
+  // Analytics
+  getSystemAnalytics: () => api.get('/admin/analytics'),
+
+  // Location Management
+  getAllLocations: () => api.get('/admin/locations'),
+  addLocation: (locationData) => api.post('/admin/locations', locationData),
+  updateLocation: (id, locationData) => api.put(`/admin/locations/${id}`, locationData),
+  deleteLocation: (id) => api.delete(`/admin/locations/${id}`),
+
+  // Recent Activity
+  getRecentCustomers: () => api.get('/admin/users/recent'),
+  getRecentHotels: () => api.get('/admin/hotels/recent'),
 };
 
 // ============ INVOICE SERVICE (.NET) ============
@@ -235,6 +250,19 @@ export const adminBookingManagement = {
   getAllBookings: () => adminAPI.getAllBookings(),
 };
 
+// ADMIN - SYSTEM ANALYTICS
+export const adminSystemAnalytics = {
+  getStats: () => adminAPI.getSystemAnalytics(),
+};
+
+// ADMIN - LOCATION MANAGEMENT
+export const adminLocationManagement = {
+  getAll: () => adminAPI.getAllLocations(),
+  add: (data) => adminAPI.addLocation(data),
+  update: (id, data) => adminAPI.updateLocation(id, data),
+  delete: (id) => adminAPI.deleteLocation(id),
+};
+
 // Default export with all APIs
 export default {
   public: publicAPI,
@@ -257,4 +285,7 @@ export default {
   adminPaymentManagement,
   adminUserManagement,
   adminBookingManagement,
+  adminBookingManagement,
+  adminSystemAnalytics,
+  adminLocationManagement,
 };

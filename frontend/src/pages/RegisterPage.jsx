@@ -9,7 +9,9 @@ const RegisterPage = () => {
         lastName: '',
         email: '',
         password: '',
-        phone: ''
+        phone: '',
+        address: '',
+        regAmount: 500
     });
     const [loading, setLoading] = useState(false);
 
@@ -101,10 +103,22 @@ const RegisterPage = () => {
                         <input
                             name="phone"
                             type="tel"
+                            required
                             value={formData.phone}
                             onChange={handleChange}
                             className="input-field"
-                            placeholder="Phone (optional)"
+                            placeholder="Phone Number"
+                        />
+                    </div>
+
+                    <div>
+                        <input
+                            name="address"
+                            type="text"
+                            value={formData.address}
+                            onChange={handleChange}
+                            className="input-field"
+                            placeholder="Address (optional)"
                         />
                     </div>
 

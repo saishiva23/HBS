@@ -53,10 +53,12 @@ const SuperAdminDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const [users, payments, pendingHotels] = await Promise.all([
+            const [users, payments, pendingHotels, recentCustomers, recentHotels] = await Promise.all([
                 adminAPI.getAllUsers(),
                 adminAPI.getAllPayments(),
-                adminAPI.getPendingHotels()
+                adminAPI.getPendingHotels(),
+                adminAPI.getRecentCustomers(),
+                adminAPI.getRecentHotels()
             ]);
 
             const totalRevenue = payments.reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
@@ -90,14 +92,31 @@ const SuperAdminDashboard = () => {
                 id: h.id,
                 name: h.name,
                 location: `${h.city}, ${h.state}`,
-                owner: h.owner ? `${h.owner.firstName} ${h.owner.lastName}` : 'Unknown', // Check if owner data is in Hotel entity
-                date: new Date().toISOString().split('T')[0] // Fallback as createdDate might be missing in simple Hotel entity view
+                owner: h.owner ? `${h.owner.firstName} ${h.owner.lastName}` : 'Unknown',
+                date: new Date().toISOString().split('T')[0]
             })));
 
-            // Mock recent activities for now as backend lacks logs
-            setRecentActivities([
-                 { id: 1, action: 'System check', user: 'Admin', time: 'Just now', type: 'system' }
-            ]);
+            // Combine and map recent activities
+            const recentCustomerActivities = recentCustomers.map(u => ({
+                id: `u-${u.id}`,
+                action: 'New Customer Joined',
+                hotel: null,
+                user: `${u.firstName} ${u.lastName}`,
+                time: 'Recently',
+                type: 'user'
+            }));
+
+            const recentHotelActivities = recentHotels.map(h => ({
+                id: `h-${h.id}`,
+                action: 'New Hotel Registered',
+                hotel: h.name,
+                user: h.owner ? `${h.owner.firstName} ${h.owner.lastName}` : 'Owner',
+                time: 'Recently',
+                type: 'hotel'
+            }));
+
+            // Interleave or just concat (Customers first then Hotels)
+            setRecentActivities([...recentHotelActivities, ...recentCustomerActivities].slice(0, 5));
 
         } catch (error) {
             console.error("Failed to fetch dashboard stats", error);
@@ -200,7 +219,7 @@ const SuperAdminDashboard = () => {
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Activity</h2>
-                                <Link to="/superadmin/logs" className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-semibold">
+                                <Link to="/admin/logs" className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-semibold">
                                     View Logs →
                                 </Link>
                             </div>

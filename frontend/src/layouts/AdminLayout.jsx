@@ -66,6 +66,7 @@ const AdminLayout = ({ children }) => {
         { path: '/admin/dashboard', label: 'Dashboard', icon: FaChartBar },
         { path: '/admin/approvals', label: 'Hotel Approvals', icon: FaCheckCircle },
         { path: '/admin/hotels', label: 'All Hotels', icon: FaHotel },
+        { path: '/admin/locations', label: 'Locations', icon: FaMapMarkerAlt },
         { path: '/admin/customers', label: 'Customers', icon: FaUsers },
         { path: '/admin/analytics', label: 'Analytics', icon: FaChartPie },
     ];

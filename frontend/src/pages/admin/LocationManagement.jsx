@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
+import { adminLocationManagement } from '../../services/completeAPI';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -11,15 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const LocationManagement = () => {
-  const [locations, setLocations] = useState([
-    { id: 1, city: 'Mumbai', state: 'Maharashtra', country: 'India', hotelCount: 45, addedDate: '2025-01-15' },
-    { id: 2, city: 'Delhi', state: 'Delhi NCR', country: 'India', hotelCount: 38, addedDate: '2025-01-10' },
-    { id: 3, city: 'Goa', state: 'Goa', country: 'India', hotelCount: 62, addedDate: '2025-01-05' },
-    { id: 4, city: 'Jaipur', state: 'Rajasthan', country: 'India', hotelCount: 28, addedDate: '2025-01-01' },
-    { id: 5, city: 'Udaipur', state: 'Rajasthan', country: 'India', hotelCount: 22, addedDate: '2024-12-20' },
-    { id: 6, city: 'Bangalore', state: 'Karnataka', country: 'India', hotelCount: 35, addedDate: '2024-12-15' },
-    { id: 7, city: 'Chennai', state: 'Tamil Nadu', country: 'India', hotelCount: 18, addedDate: '2024-12-10' },
-  ]);
+  const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -32,6 +26,22 @@ const LocationManagement = () => {
     state: '',
     country: 'India'
   });
+
+  const fetchLocations = async () => {
+    try {
+      setLoading(true);
+      const data = await adminLocationManagement.getAll();
+      setLocations(data);
+    } catch (error) {
+      console.error('Failed to fetch locations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+  }, []);
 
   const filteredLocations = locations.filter(loc => 
     loc.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,24 +64,20 @@ const LocationManagement = () => {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingLocation) {
-      setLocations(locations.map(loc => 
-        loc.id === editingLocation.id 
-          ? { ...loc, ...formData }
-          : loc
-      ));
-    } else {
-      const newLocation = {
-        id: Date.now(),
-        ...formData,
-        hotelCount: 0,
-        addedDate: new Date().toISOString().split('T')[0]
-      };
-      setLocations([...locations, newLocation]);
+    try {
+      if (editingLocation) {
+        await adminLocationManagement.update(editingLocation.id, formData);
+      } else {
+        await adminLocationManagement.add(formData);
+      }
+      fetchLocations();
+      setShowModal(false);
+    } catch (error) {
+      console.error('Failed to save location:', error);
+      alert('Failed to save location');
     }
-    setShowModal(false);
   };
 
   const confirmDelete = (location) => {
@@ -79,10 +85,16 @@ const LocationManagement = () => {
     setShowDeleteModal(true);
   };
 
-  const deleteLocation = () => {
-    setLocations(locations.filter(loc => loc.id !== locationToDelete.id));
-    setShowDeleteModal(false);
-    setLocationToDelete(null);
+  const deleteLocation = async () => {
+    try {
+      await adminLocationManagement.delete(locationToDelete.id);
+      fetchLocations();
+      setShowDeleteModal(false);
+      setLocationToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete location:', error);
+      alert('Failed to delete location');
+    }
   };
 
   const totalHotels = locations.reduce((sum, loc) => sum + loc.hotelCount, 0);

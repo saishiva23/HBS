@@ -13,5 +13,13 @@ import lombok.Setter;
 public class AuthResp {
     private String jwt;
     private String message;
+    private String role;
+    private String name;
 
+    public AuthResp(String jwt, String message) {
+        this.jwt = jwt;
+        this.message = message;
+        this.role = "user"; // Default role
+        this.name = "User"; // Default name
+    }
 }

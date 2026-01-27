@@ -35,4 +35,8 @@ public class BookingResponseDTO {
     private String paymentStatus;
     private String paymentMethod;
     private String transactionId;
+
+    // Registered User details
+    private String userEmail;
+    private String userName;
 }
