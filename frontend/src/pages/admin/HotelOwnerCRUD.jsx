@@ -37,8 +37,6 @@ const HotelOwnerCRUD = () => {
         address: '',
         totalRooms: '',
         description: '',
-        totalRooms: '',
-        description: '',
         amenities: [], // Array for checkboxes
         priceRange: '',
     };
@@ -52,7 +50,9 @@ const HotelOwnerCRUD = () => {
     const fetchHotels = async () => {
         setIsLoading(true);
         try {
+            console.log('Fetching owner hotels...');
             const data = await ownerHotelManagement.getMyHotels();
+            console.log('Owner hotels fetched successfully:', data);
             setHotels(data);
             // If no hotel selected, select the first one
             if (!selectedHotel && data.length > 0) {
@@ -60,6 +60,8 @@ const HotelOwnerCRUD = () => {
             }
         } catch (error) {
             console.error("Failed to load hotels", error);
+            const errorMessage = error.message || error.error || 'Unknown error occurred';
+            alert(`Failed to load hotels: ${errorMessage}\nPlease check console for details.`);
         } finally {
             setIsLoading(false);
         }
@@ -85,7 +87,7 @@ const HotelOwnerCRUD = () => {
                 gym: (formData.amenities || []).includes('Gym'),
                 ac: (formData.amenities || []).includes('AC'),
                 restaurant: (formData.amenities || []).includes('Restaurant'),
-                roomService: false, 
+                roomService: false,
                 city: formData.location.split(',')[0].trim(), // Simple extraction
                 state: formData.location.split(',')[1]?.trim() || '',
             };
@@ -126,23 +128,23 @@ const HotelOwnerCRUD = () => {
     const handleUpdateHotel = async () => {
         try {
             const payload = {
-               ...formData,
-               totalRooms: parseInt(formData.totalRooms),
-               city: formData.location.split(',')[0].trim(),
-               state: formData.location.split(',')[1]?.trim() || '',
-               wifi: (formData.amenities || []).includes('WiFi'),
-               parking: (formData.amenities || []).includes('Parking'),
-               gym: (formData.amenities || []).includes('Gym'),
-               ac: (formData.amenities || []).includes('AC'),
-               restaurant: (formData.amenities || []).includes('Restaurant'),
-               roomService: false,
+                ...formData,
+                totalRooms: parseInt(formData.totalRooms),
+                city: formData.location.split(',')[0].trim(),
+                state: formData.location.split(',')[1]?.trim() || '',
+                wifi: (formData.amenities || []).includes('WiFi'),
+                parking: (formData.amenities || []).includes('Parking'),
+                gym: (formData.amenities || []).includes('Gym'),
+                ac: (formData.amenities || []).includes('AC'),
+                restaurant: (formData.amenities || []).includes('Restaurant'),
+                roomService: false,
             };
             await ownerHotelManagement.updateHotel(selectedHotel.id, payload);
             await fetchHotels();
             setIsEditing(false);
         } catch (error) {
             console.error("Failed to update hotel", error);
-             alert("Failed to update hotel");
+            alert("Failed to update hotel");
         }
     };
 
@@ -157,7 +159,7 @@ const HotelOwnerCRUD = () => {
     // DELETE - Remove hotel
     const handleDeleteHotel = async () => {
         if (selectedHotel.activeBookings > 0 && false) { // Logic to check bookings? API should handle error
-             // Backend will throw if constraint violation
+            // Backend will throw if constraint violation
         }
         try {
             await ownerHotelManagement.deleteHotel(selectedHotel.id);
@@ -165,14 +167,14 @@ const HotelOwnerCRUD = () => {
             setSelectedHotel(null);
             setShowDeleteModal(false);
         } catch (error) {
-             console.error("Failed to delete hotel", error);
-             alert("Failed to delete hotel: " + error.message);
+            console.error("Failed to delete hotel", error);
+            alert("Failed to delete hotel: " + error.message);
         }
     };
 
     // RESTORE - Not implemented in backend yet
     const handleRestoreHotel = (hotel) => {
-         // no-op
+        // no-op
     };
 
     return (
@@ -216,9 +218,8 @@ const HotelOwnerCRUD = () => {
                         {hotels.map((hotel) => (
                             <div
                                 key={hotel.id}
-                                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border transition-all hover:shadow-xl ${
-                                    selectedHotel?.id === hotel.id ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-100 dark:border-gray-700'
-                                }`}
+                                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border transition-all hover:shadow-xl ${selectedHotel?.id === hotel.id ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-100 dark:border-gray-700'
+                                    }`}
                             >
                                 {/* Hotel Image */}
                                 <div className="relative h-48">
@@ -242,7 +243,7 @@ const HotelOwnerCRUD = () => {
                                 {/* Hotel Info */}
                                 <div className="p-5">
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{hotel.name}</h3>
-                                    
+
                                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                                         <p className="flex items-center gap-2">
                                             <FaMapMarkerAlt className="text-blue-500" />
@@ -424,11 +425,10 @@ const HotelOwnerCRUD = () => {
                                                     : [...current, opt];
                                                 setFormData({ ...formData, amenities: newAmenities });
                                             }}
-                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                (formData.amenities || []).includes(opt)
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${(formData.amenities || []).includes(opt)
                                                     ? 'bg-blue-600 text-white'
                                                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                            }`}
+                                                }`}
                                         >
                                             {opt}
                                         </button>
@@ -615,7 +615,7 @@ const HotelOwnerCRUD = () => {
                             </div>
                             <h3 className="text-xl font-bold dark:text-white">Archive Hotel</h3>
                         </div>
-                        
+
                         {selectedHotel.activeBookings > 0 && (
                             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-xl p-4 mb-4">
                                 <p className="text-yellow-800 dark:text-yellow-400 text-sm font-medium">
@@ -623,7 +623,7 @@ const HotelOwnerCRUD = () => {
                                 </p>
                             </div>
                         )}
-                        
+
                         <p className="text-gray-600 dark:text-gray-400 mb-6">
                             Archive <strong>{selectedHotel.name}</strong>? Archived hotels won't appear in search results but can be restored later.
                         </p>

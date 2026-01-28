@@ -33,9 +33,7 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
-            if (userRepository.count() == 0) {
-                loadInitialData();
-            }
+            loadInitialData();
         } catch (Exception e) {
             log.error("Failed to load initial data: {}", e.getMessage(), e);
             throw e;
@@ -43,19 +41,63 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void loadInitialData() {
-        log.info("Loading default users...");
-        List<User> users = createUsers();
-        userRepository.saveAll(users);
-        log.info("Default users created: admin@stays.in, user@stays.in, owner@stays.in");
+        // Load users if they don't exist
+        List<User> users;
+        if (userRepository.count() == 0) {
+            log.info("Loading default users...");
+            users = createUsers();
+            userRepository.saveAll(users);
+            log.info("Default users created: admin@stays.in, user@stays.in, owner@stays.in");
 
-        // Create only one test user
-        User testUser = new User("Test", "User", "test@test.com",
-                passwordEncoder.encode("test123"), LocalDate.of(1990, 1, 1), 0, "1234567890", "Test Address");
-        testUser.setUserRole(UserRole.ROLE_CUSTOMER);
-        testUser.setAccountStatus("ACTIVE");
+            // Create only one test user
+            User testUser = new User("Test", "User", "test@test.com",
+                    passwordEncoder.encode("test123"), LocalDate.of(1990, 1, 1), 0, "1234567890", "Test Address");
+            testUser.setUserRole(UserRole.ROLE_CUSTOMER);
+            testUser.setAccountStatus("ACTIVE");
 
-        userRepository.save(testUser);
-        log.info("Test user created: test@test.com / test123");
+            userRepository.save(testUser);
+            log.info("Test user created: test@test.com / test123");
+        } else {
+            log.info("Users already exist. Skipping user creation.");
+            users = userRepository.findAll(); // Get existing users for hotel creation
+        }
+
+        // Load hotels if they don't exist
+        List<Hotel> hotels;
+        if (hotelRepository.count() == 0) {
+            log.info("Loading default hotels...");
+            // Find the hotel manager (owner) user
+            User owner = users.stream()
+                    .filter(u -> UserRole.ROLE_HOTEL_MANAGER.equals(u.getUserRole()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (owner == null) {
+                log.error("Hotel manager user not found! Cannot create hotels.");
+                return;
+            }
+
+            hotels = createHotels(owner);
+            hotelRepository.saveAll(hotels);
+            log.info("Default hotels created: {} hotels assigned to owner: {}", hotels.size(), owner.getEmail());
+        } else {
+            log.info("Hotels already exist. Skipping hotel creation.");
+            hotels = hotelRepository.findAll(); // Get existing hotels for room type creation
+        }
+
+        // Load room types if they don't exist AND we have hotels
+        if (roomTypeRepository.count() == 0) {
+            if (hotels != null && !hotels.isEmpty()) {
+                log.info("Loading default room types...");
+                List<RoomType> roomTypes = createRoomTypes(hotels);
+                roomTypeRepository.saveAll(roomTypes);
+                log.info("Default room types created: {} room types", roomTypes.size());
+            } else {
+                log.warn("Cannot create room types: No hotels available in the database");
+            }
+        } else {
+            log.info("Room types already exist. Skipping room type creation.");
+        }
     }
 
     private List<User> createUsers() {
@@ -77,7 +119,7 @@ public class DataLoader implements CommandLineRunner {
         return Arrays.asList(admin, customer, hotelManager);
     }
 
-    private List<Hotel> createHotels() {
+    private List<Hotel> createHotels(User owner) {
         Hotel hotel1 = new Hotel();
         hotel1.setName("Taj Lands End");
         hotel1.setCity("Mumbai");
@@ -91,6 +133,7 @@ public class DataLoader implements CommandLineRunner {
         hotel1.setDescription("Luxury hotel with ocean views");
         hotel1.setStatus("APPROVED");
         hotel1.setPriceRange("₹15,000 - ₹50,000");
+        hotel1.setOwner(owner); // SET OWNER!
 
         Hotel hotel2 = new Hotel();
         hotel2.setName("The Grand Palace");
@@ -105,6 +148,7 @@ public class DataLoader implements CommandLineRunner {
         hotel2.setDescription("Palace hotel with royal heritage");
         hotel2.setStatus("APPROVED");
         hotel2.setPriceRange("₹30,000 - ₹80,000");
+        hotel2.setOwner(owner); // SET OWNER!
 
         return Arrays.asList(hotel1, hotel2);
     }

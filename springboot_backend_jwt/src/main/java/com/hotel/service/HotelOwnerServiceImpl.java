@@ -19,6 +19,8 @@ import com.hotel.dtos.HotelDTO;
 import com.hotel.dtos.RoomDTO;
 import com.hotel.dtos.RoomTypeDTO;
 import com.hotel.entities.Booking;
+import com.hotel.entities.Complaint;
+import com.hotel.entities.ComplaintStatus;
 import com.hotel.entities.Hotel;
 import com.hotel.entities.Room;
 import com.hotel.entities.RoomType;
@@ -477,7 +479,7 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
             throw new IllegalArgumentException("Not authorized to resolve this complaint");
         }
 
-        complaint.setStatus("RESOLVED");
+        complaint.setStatus(ComplaintStatus.RESOLVED);
         complaint.setResolution(resolution);
         complaint.setResolvedAt(java.time.LocalDateTime.now());
         complaintRepository.save(complaint);
@@ -506,7 +508,7 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
         dto.setGuestEmail(complaint.getUser().getEmail());
         dto.setSubject(complaint.getSubject());
         dto.setDescription(complaint.getDescription());
-        dto.setStatus(complaint.getStatus());
+        dto.setStatus(complaint.getStatus().name()); // Convert enum to string
         dto.setCreatedAt(complaint.getCreatedAt());
         dto.setResolvedAt(complaint.getResolvedAt());
         dto.setResolution(complaint.getResolution());

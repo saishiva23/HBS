@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   TicketIcon,
@@ -296,7 +296,7 @@ const Bookings = () => {
                           <h3 className="text-xl font-bold dark:text-white">{booking.hotel}</h3>
                           <p className="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-1">
                             <MapPinIcon className="h-4 w-4" />
-                            {booking.city} • {booking.roomType}
+                            {booking.city} â€¢ {booking.roomType}
                           </p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(booking.status)}`}>
@@ -502,6 +502,143 @@ const Bookings = () => {
                 className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
               >
                 Cancel Booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReviewModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
+                <FaStar className="h-6 w-6 text-yellow-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold dark:text-white">Write a Review</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{selectedBooking.hotel}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              {/* Star Rating */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Your Rating
+                </label>
+                <div className="flex gap-2">
+                  {renderStars(REMOVEME.rating, true, (rating) => setREMOVEME({ ...REMOVEME, rating }))}
+                  <span className="ml-2 text-lg font-bold text-yellow-500">{REMOVEME.rating}/5</span>
+                </div>
+              </div>
+
+              {/* Review Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Review Title *
+                </label>
+                <input
+                  type="text"
+                  value={REMOVEME.title}
+                  onChange={(e) => setREMOVEME({ ...REMOVEME, title: e.target.value })}
+                  placeholder="Summarize your experience"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              {/* Review Comment */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Your Review *
+                </label>
+                <textarea
+                  rows="4"
+                  value={REMOVEME.comment}
+                  onChange={(e) => setREMOVEME({ ...REMOVEME, comment: e.target.value })}
+                  placeholder="Tell us about your stay. What did you like? What could be improved?"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-semibold dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReview}
+                className="flex-1 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 rounded-xl font-bold hover:from-yellow-500 hover:to-yellow-600"
+              >
+                Submit Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complaint Modal */}
+      {showComplaintModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold dark:text-white">Report an Issue</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{selectedBooking.hotel}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Subject *
+                </label>
+                <select
+                  value={complaintForm.subject}
+                  onChange={(e) => setComplaintForm({ ...complaintForm, subject: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select an issue...</option>
+                  <option value="Cleanliness">Cleanliness Issue</option>
+                  <option value="Staff Behavior">Staff Behavior</option>
+                  <option value="Facilities Mismatch">Facilities Mismatch</option>
+                  <option value="Payment Issue">Payment Issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Description *
+                </label>
+                <textarea
+                  rows="4"
+                  value={complaintForm.description}
+                  onChange={(e) => setComplaintForm({ ...complaintForm, description: e.target.value })}
+                  placeholder="Please describe the issue in detail..."
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowComplaintModal(false)}
+                className="flex-1 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-semibold dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleComplaintSubmit}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
+              >
+                Submit Complaint
               </button>
             </div>
           </div>

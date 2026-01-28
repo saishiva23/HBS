@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { HeartIcon, MapPinIcon, ShoppingCartIcon } from "@heroicons/react/24/solid";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import toast from "react-hot-toast";
 import SearchBar from "../components/SearchBar";
 import { addToRecentlyViewed } from "../components/RecentlyViewedHotels";
@@ -9,12 +10,12 @@ import { calculateNights, currency, getCappedPrice } from "../utils/bookingUtils
 import customerAPI from "../services/customerAPI";
 
 const SortChip = ({ children, active, onClick }) => (
-  <button 
+  <button
     onClick={onClick}
     className={`px-3 py-2 border dark:border-gray-700 rounded-full text-sm transition font-medium ${active
       ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500'
       : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-    }`}
+      }`}
   >
     {children}
   </button>
@@ -25,21 +26,25 @@ const ResultCard = ({ item, onAddToCart, nights = 1, rooms = 1 }) => {
   const totalPrice = item.price * nights * rooms;
   const totalOriginal = item.originalPrice * nights * rooms;
 
+  const navigate = useNavigate();
+
   const handleCardClick = () => {
-    // Track hotel view only if user is authenticated
+    // Track hotel view
     if (window.localStorage.getItem('token')) {
       addToRecentlyViewed(item.id);
     }
+    // Navigate to hotel details page
+    navigate(`/hotel/${item.id}`);
   };
 
   return (
-    <div 
+    <div
       className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 shadow-sm p-4 flex gap-4 hover:shadow-md transition-colors cursor-pointer"
       onClick={handleCardClick}
     >
       <div className="relative">
         <img src={item.image} alt={item.name} className="w-52 h-40 object-cover rounded-lg" />
-        <button 
+        <button
           className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-700 rounded-full shadow hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
@@ -109,7 +114,7 @@ const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
+
   // State for sorting only
   const [sortBy, setSortBy] = useState("Recommended");
 
@@ -136,66 +141,66 @@ const SearchResults = () => {
         let results = [];
         // If destination is provided, search, otherwise get all or popular
         if (initialValues.destination) {
-          const data = await customerAPI.searchPage.searchWithFilters({ 
-            city: initialValues.destination, 
-            destination: initialValues.destination 
+          const data = await customerAPI.searchPage.searchWithFilters({
+            city: initialValues.destination,
+            destination: initialValues.destination
           });
           results = data;
         } else {
           // If no destination, maybe show all (or handle empty state)
           // For now, let's fetch all or handle appropriately
-           const data = await customerAPI.hotels.getAll(); // strict backend integration
-           results = data;
+          const data = await customerAPI.hotels.getAll(); // strict backend integration
+          results = data;
         }
 
         // Map backend data to frontend format
         const mappedResults = results.map(hotel => {
-             let parsedImages = [];
-             try {
-                parsedImages = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-             } catch (e) { parsedImages = [hotel.images] } // Fallback
+          let parsedImages = [];
+          try {
+            parsedImages = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
+          } catch (e) { parsedImages = [hotel.images] } // Fallback
 
-             const parsedAmenities = [];
-             if (hotel.wifi) parsedAmenities.push("WiFi");
-             if (hotel.parking) parsedAmenities.push("Parking");
-             if (hotel.gym) parsedAmenities.push("Gym");
-             if (hotel.ac) parsedAmenities.push("AC");
-             if (hotel.restaurant) parsedAmenities.push("Restaurant");
-             if (hotel.roomService) parsedAmenities.push("Room Service");
-             
-             // Extract price number from priceRange string if possible, else default
-             let priceVal = 5000;
-             if (hotel.priceRange) {
-                 const match = hotel.priceRange.match(/(\d+)/);
-                 if (match) priceVal = parseInt(match[0]);
-             }
+          const parsedAmenities = [];
+          if (hotel.wifi) parsedAmenities.push("WiFi");
+          if (hotel.parking) parsedAmenities.push("Parking");
+          if (hotel.gym) parsedAmenities.push("Gym");
+          if (hotel.ac) parsedAmenities.push("AC");
+          if (hotel.restaurant) parsedAmenities.push("Restaurant");
+          if (hotel.roomService) parsedAmenities.push("Room Service");
 
-             return {
-                 id: hotel.id,
-                 name: hotel.name,
-                 city: hotel.city,
-                 state: hotel.state,
-                 image: parsedImages[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60',
-                 distance: hotel.distance || "Near City Center",
-                 location: hotel.location || `${hotel.city}, ${hotel.state}`,
-                 ratingScore: hotel.rating || 0,
-                 ratingText: hotel.ratingText || "Good",
-                 ratingCount: hotel.ratingCount || 0,
-                 price: priceVal,
-                 originalPrice: priceVal, // Backend doesn't have orig price
-                 amenities: parsedAmenities,
-                 roomType: "Standard Room", // Backend hotel entity doesn't list specific room types in search
-             };
+          // Extract price number from priceRange string if possible, else default
+          let priceVal = 5000;
+          if (hotel.priceRange) {
+            const match = hotel.priceRange.match(/(\d+)/);
+            if (match) priceVal = parseInt(match[0]);
+          }
+
+          return {
+            id: hotel.id,
+            name: hotel.name,
+            city: hotel.city,
+            state: hotel.state,
+            image: parsedImages[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60',
+            distance: hotel.distance || "Near City Center",
+            location: hotel.location || `${hotel.city}, ${hotel.state}`,
+            ratingScore: hotel.rating || 0,
+            ratingText: hotel.ratingText || "Good",
+            ratingCount: hotel.ratingCount || 0,
+            price: priceVal,
+            originalPrice: priceVal, // Backend doesn't have orig price
+            amenities: parsedAmenities,
+            roomType: "Standard Room", // Backend hotel entity doesn't list specific room types in search
+          };
         });
 
         // 2. Apply sorting (Frontend side for now)
         const sorted = [...mappedResults].sort((a, b) => {
-           if (sortBy === "Price: Low to High") return a.price - b.price;
-           if (sortBy === "Price: High to Low") return b.price - a.price;
-           if (sortBy === "Top Rated") return b.ratingScore - a.ratingScore;
-           return 0; // Recommended
+          if (sortBy === "Price: Low to High") return a.price - b.price;
+          if (sortBy === "Price: High to Low") return b.price - a.price;
+          if (sortBy === "Top Rated") return b.ratingScore - a.ratingScore;
+          return 0; // Recommended
         });
-        
+
         setSearchResults(sorted);
 
       } catch (error) {
@@ -210,6 +215,22 @@ const SearchResults = () => {
     fetchHotels();
   }, [initialValues.destination, sortBy]); // Re-run when destination or sort changes
 
+  const toggleFavorite = (hotel) => {
+    const isFavorited = favorites.some(f => f.id === hotel.id);
+
+    let updatedFavorites;
+    if (isFavorited) {
+      updatedFavorites = favorites.filter(f => f.id !== hotel.id);
+      toast.success(`${hotel.name} removed from favorites`);
+    } else {
+      updatedFavorites = [...favorites, hotel];
+      toast.success(`${hotel.name} added to favorites`);
+    }
+
+    setFavorites(updatedFavorites);
+    localStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+  };
+
   const handleAddToCart = (hotel) => {
     if (!isAuthenticated) {
       toast.error("Please login to book a hotel");
@@ -221,9 +242,9 @@ const SearchResults = () => {
 
     const nights = calculateNights(initialValues.start, initialValues.end);
     const roomsCount = parseInt(initialValues.rooms || "1");
-    
+
     const basePrice = getCappedPrice(hotel.name, hotel.price);
-    
+
     const bookingDetails = {
       hotel: hotel.name,
       hotelId: hotel.id,
@@ -242,7 +263,7 @@ const SearchResults = () => {
     const existingCart = JSON.parse(localStorage.getItem("hotelCart") || "[]");
     existingCart.push(bookingDetails);
     localStorage.setItem("hotelCart", JSON.stringify(existingCart));
-    
+
     window.dispatchEvent(new Event("cartUpdated"));
     toast.success(`${hotel.name} added to cart!`);
   };
@@ -271,20 +292,20 @@ const SearchResults = () => {
           <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Sort by</span>
-              <SortChip 
-                active={sortBy === "Recommended"} 
+              <SortChip
+                active={sortBy === "Recommended"}
                 onClick={() => setSortBy("Recommended")}
               >
                 Recommended
               </SortChip>
-              <SortChip 
-                active={sortBy.startsWith("Price")} 
+              <SortChip
+                active={sortBy.startsWith("Price")}
                 onClick={() => setSortBy(sortBy === "Price: Low to High" ? "Price: High to Low" : "Price: Low to High")}
               >
                 Price {sortBy === "Price: Low to High" ? "↑" : sortBy === "Price: High to Low" ? "↓" : ""}
               </SortChip>
-              <SortChip 
-                active={sortBy === "Top Rated"} 
+              <SortChip
+                active={sortBy === "Top Rated"}
                 onClick={() => setSortBy("Top Rated")}
               >
                 Top Rated
@@ -298,17 +319,17 @@ const SearchResults = () => {
 
           <div className="space-y-4">
             {isLoading ? (
-                <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>
+              <div className="flex justify-center p-10"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>
             ) : (
-                searchResults.map((hotel) => (
-                  <ResultCard 
-                    key={hotel.id} 
-                    item={hotel} 
-                    onAddToCart={handleAddToCart}
-                    nights={calculateNights(initialValues.start, initialValues.end)}
-                    rooms={parseInt(initialValues.rooms || "1")}
-                  />
-                ))
+              searchResults.map((hotel) => (
+                <ResultCard
+                  key={hotel.id}
+                  item={hotel}
+                  onAddToCart={handleAddToCart}
+                  nights={calculateNights(initialValues.start, initialValues.end)}
+                  rooms={parseInt(initialValues.rooms || "1")}
+                />
+              ))
             )}
           </div>
         </>

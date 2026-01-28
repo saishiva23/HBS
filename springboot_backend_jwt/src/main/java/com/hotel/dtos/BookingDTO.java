@@ -3,15 +3,18 @@ package com.hotel.dtos;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import com.hotel.validation.ValidBookingDates;
+
 @Getter
 @Setter
 @ToString
+@ValidBookingDates
 public class BookingDTO {
 
     @NotNull(message = "Hotel ID is required")
@@ -21,11 +24,11 @@ public class BookingDTO {
     private Long roomTypeId;
 
     @NotNull(message = "Check-in date is required")
-    @Future(message = "Check-in date must be in the future")
+    @FutureOrPresent(message = "Check-in date must be today or in the future")
     private LocalDate checkInDate;
 
     @NotNull(message = "Check-out date is required")
-    @Future(message = "Check-out date must be in the future")
+    @FutureOrPresent(message = "Check-out date must be today or in the future")
     private LocalDate checkOutDate;
 
     private Integer adults = 1;

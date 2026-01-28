@@ -1,44 +1,103 @@
-import { createContext, useContext, useState } from 'react';
-
-// Sample hotels managed by the hotelier
-const hotelierHotels = [
-    {
-        id: 1,
-        name: 'Grand Luxury Hotel',
-        location: 'New York, NY',
-        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&h=100&fit=crop',
-        totalRooms: 150,
-        rating: 4.8,
-    },
-    {
-        id: 2,
-        name: 'Sunset Beach Resort',
-        location: 'Miami, FL',
-        image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=100&h=100&fit=crop',
-        totalRooms: 85,
-        rating: 4.6,
-    },
-    {
-        id: 3,
-        name: 'Mountain View Lodge',
-        location: 'Denver, CO',
-        image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=100&h=100&fit=crop',
-        totalRooms: 45,
-        rating: 4.9,
-    },
-];
+import { createContext, useContext, useState, useEffect } from 'react';
+import { ownerAPI } from '../services/completeAPI';
 
 const HotelContext = createContext();
 
 export const HotelProvider = ({ children }) => {
-    const [hotels] = useState(hotelierHotels);
-    const [selectedHotel, setSelectedHotel] = useState(hotelierHotels[0]);
+    const [hotels, setHotels] = useState([]);
+    const [selectedHotel, setSelectedHotel] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Fetch owner's hotels from backend
+    const fetchHotels = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            console.log('[HotelContext] Fetching owner hotels from API...');
+
+            const data = await ownerAPI.getMyHotels();
+            console.log('[HotelContext] Fetched hotels:', data);
+
+            // Transform backend data to match expected format
+            const transformedHotels = data.map(hotel => ({
+                id: hotel.id,
+                name: hotel.name,
+                location: `${hotel.city}, ${hotel.state}`,
+                city: hotel.city,
+                state: hotel.state,
+                address: hotel.address,
+                status: hotel.status,
+                image: hotel.images
+                    ? (typeof hotel.images === 'string' ? JSON.parse(hotel.images)[0] : hotel.images[0])
+                    : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&h=100&fit=crop',
+                totalRooms: hotel.totalRooms || 0,
+                rating: hotel.rating || 0,
+                description: hotel.description,
+                amenities: {
+                    wifi: hotel.wifi,
+                    parking: hotel.parking,
+                    gym: hotel.gym,
+                    ac: hotel.ac,
+                    restaurant: hotel.restaurant,
+                    roomService: hotel.roomService
+                }
+            }));
+
+            setHotels(transformedHotels);
+
+            // Auto-select first hotel if none selected
+            if (!selectedHotel && transformedHotels.length > 0) {
+                setSelectedHotel(transformedHotels[0]);
+                console.log('[HotelContext] Auto-selected first hotel:', transformedHotels[0].name);
+            }
+        } catch (err) {
+            console.error('[HotelContext] Failed to fetch hotels:', err);
+            setError(err.message || 'Failed to load hotels');
+            setHotels([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch hotels on mount
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetchHotels();
+        } else {
+            console.warn('[HotelContext] No auth token found, skipping hotel fetch');
+            setLoading(false);
+        }
+
+        // Auto-refresh hotel data when window regains focus
+        // This ensures owners see updated hotel status after admin approval/deletion
+        const handleFocus = () => {
+            const currentToken = localStorage.getItem('token');
+            if (currentToken) {
+                console.log('[HotelContext] Window focused, refreshing hotel data...');
+                fetchHotels();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, []);
 
     const selectHotel = (hotelId) => {
         const hotel = hotels.find(h => h.id === hotelId);
         if (hotel) {
             setSelectedHotel(hotel);
+            console.log('[HotelContext] Selected hotel:', hotel.name);
         }
+    };
+
+    // Refresh hotel data (useful after creating/updating hotels)
+    const refreshHotels = () => {
+        fetchHotels();
     };
 
     return (
@@ -46,6 +105,9 @@ export const HotelProvider = ({ children }) => {
             hotels,
             selectedHotel,
             selectHotel,
+            refreshHotels,
+            loading,
+            error,
             hotelId: selectedHotel?.id
         }}>
             {children}

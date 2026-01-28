@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useHotel } from '../context/HotelContext';
 import OwnerNavigation from '../components/OwnerNavigation';
 import { FaLock } from 'react-icons/fa';
 
 const OwnerLayout = ({ children }) => {
     const { isAuthenticated, user } = useAuth();
+    const { hotels, loading } = useHotel();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const location = useLocation();
 
     // Check if user is authenticated and has owner role (Hotel Owner only)
     const isAuthorized = isAuthenticated && (user?.role === 'owner' || user?.role === 'ROLE_HOTEL_MANAGER');
@@ -47,6 +50,41 @@ const OwnerLayout = ({ children }) => {
                 </div>
             </div>
         );
+    }
+
+    // Show loading while fetching hotels
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    // Check if owner has no hotels at all (deleted or never created)
+    // This check must come BEFORE the pending check
+    if (hotels.length === 0 && location.pathname !== '/owner/no-hotels') {
+        return <Navigate to="/owner/no-hotels" replace />;
+    }
+
+    // Check if all hotels are pending (only redirect from non-special pages)
+    if (hotels.length > 0) {
+        const allPending = hotels.every(h => h.status === 'PENDING');
+        const hasApproved = hotels.some(h => h.status === 'APPROVED');
+
+        // If ALL hotels are pending AND not already on pending page, redirect
+        if (allPending && location.pathname !== '/owner/pending-approval') {
+            return <Navigate to="/owner/pending-approval" replace />;
+        }
+
+        // If on no-hotels page but have hotels now, redirect appropriately
+        if (location.pathname === '/owner/no-hotels') {
+            if (allPending) {
+                return <Navigate to="/owner/pending-approval" replace />;
+            } else if (hasApproved) {
+                return <Navigate to="/owner/hotel-profile" replace />;
+            }
+        }
     }
 
     // Authorized - render the owner panel

@@ -11,6 +11,7 @@ import com.hotel.dtos.ApiResponse;
 import com.hotel.dtos.ComplaintDTO;
 import com.hotel.entities.Booking;
 import com.hotel.entities.Complaint;
+import com.hotel.entities.ComplaintStatus;
 import com.hotel.entities.Hotel;
 import com.hotel.entities.User;
 import com.hotel.repository.BookingRepository;
@@ -56,8 +57,10 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setBooking(booking);
         complaint.setSubject(dto.getSubject());
         complaint.setDescription(dto.getDescription());
-        complaint.setStatus("PENDING");
+        complaint.setStatus(ComplaintStatus.PENDING);
         complaint.setCreatedAt(LocalDateTime.now());
+        complaint.setGuestName(user.getFirstName() + " " + user.getLastName());
+        complaint.setGuestEmail(user.getEmail());
 
         return complaintRepository.save(complaint);
     }
@@ -79,13 +82,16 @@ public class ComplaintServiceImpl implements ComplaintService {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
 
-        complaint.setStatus(status);
+        // Convert string to enum
+        ComplaintStatus complaintStatus = ComplaintStatus.valueOf(status.toUpperCase());
+        complaint.setStatus(complaintStatus);
+
         if (comment != null) {
             complaint.setAdminComment(comment);
             complaint.setResolution(comment); // Also set resolution field
         }
 
-        if ("RESOLVED".equalsIgnoreCase(status) || "REJECTED".equalsIgnoreCase(status)) {
+        if (complaintStatus == ComplaintStatus.RESOLVED) {
             complaint.setResolvedAt(LocalDateTime.now());
         }
 

@@ -14,7 +14,7 @@ const currency = (v) =>
 
 const HotelCard = ({ hotel, onClick, userRating }) => {
   const discount = Math.round(((hotel.originalPrice - hotel.price) / hotel.originalPrice) * 100);
-  
+
   return (
     <button
       onClick={onClick}
@@ -70,14 +70,14 @@ const RecentlyViewedHotels = () => {
     if (isAuthenticated) {
       loadRecentlyViewed();
     }
-    
+
     // Listen for hotel viewed events
     const handleHotelViewed = () => {
       if (isAuthenticated) {
         loadRecentlyViewed();
       }
     };
-    
+
     window.addEventListener('hotelViewed', handleHotelViewed);
     return () => window.removeEventListener('hotelViewed', handleHotelViewed);
   }, [isAuthenticated]);
@@ -85,7 +85,42 @@ const RecentlyViewedHotels = () => {
   const loadRecentlyViewed = async () => {
     try {
       const hotels = await customerAPI.recentlyViewed.get();
-      setRecentHotels(hotels.slice(0, 10));
+
+      // Map backend data to frontend format
+      const mappedHotels = hotels.map(hotel => {
+        // Parse images
+        let images = [];
+        try {
+          images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images || [];
+        } catch {
+          images = [hotel.images || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60'];
+        }
+
+        // Extract price from priceRange string
+        let price = 5000; // default
+        if (hotel.priceRange) {
+          const match = hotel.priceRange.match(/(\d+)/);
+          if (match) price = parseInt(match[0]);
+        } else if (hotel.price) {
+          price = parseInt(hotel.price);
+        }
+
+        return {
+          id: hotel.id,
+          name: hotel.name,
+          city: hotel.city,
+          state: hotel.state,
+          image: images[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60',
+          price: price,
+          originalPrice: price, // No discount info from backend
+          rating: hotel.rating || 4.0,
+          ratingText: hotel.ratingText || 'Good',
+          ratingCount: hotel.ratingCount || 0,
+          ratingScore: hotel.rating || 4.0
+        };
+      });
+
+      setRecentHotels(mappedHotels.slice(0, 10));
     } catch (error) {
       console.error('Error loading recently viewed hotels:', error);
       // Fallback to localStorage
@@ -118,7 +153,7 @@ const RecentlyViewedHotels = () => {
         <ClockIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
         <h2 className="text-2xl font-bold dark:text-white">Recently viewed</h2>
       </div>
-      
+
       <div className="relative">
         <div
           ref={scrollerRef}

@@ -20,9 +20,14 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Don't redirect if it's a login attempt failure
+      const isLoginRequest = error.config?.url?.includes('/signin') || error.config?.url?.includes('/login');
+
+      if (!isLoginRequest) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     throw error.response?.data || error;
   }
@@ -33,23 +38,23 @@ api.interceptors.response.use(
 // 1. AUTHENTICATION
 export const auth = {
   // Login
-  login: (email, password) => 
+  login: (email, password) =>
     api.post('/users/signin', { email, password }),
-  
+
   // Register
-  register: (userData) => 
+  register: (userData) =>
     api.post('/users/signup', userData),
-  
+
   // Get current user profile
-  getProfile: () => 
+  getProfile: () =>
     api.get('/users/profile'),
-  
+
   // Update current user profile
-  updateProfile: (userData) => 
+  updateProfile: (userData) =>
     api.put('/users/profile', userData),
-  
+
   // Change password
-  changePassword: (currentPassword, newPassword) => 
+  changePassword: (currentPassword, newPassword) =>
     api.patch('/users/change-password', null, {
       params: { currentPassword, newPassword }
     }),
@@ -58,45 +63,45 @@ export const auth = {
 // 2. HOTEL SEARCH & BROWSE
 export const hotels = {
   // Get all hotels (Home page)
-  getAll: () => 
+  getAll: () =>
     api.get('/hotels'),
-  
+
   // Search hotels by city/destination
-  search: (city, destination) => 
+  search: (city, destination) =>
     api.get('/hotels/search', { params: { city, destination } }),
-  
+
   // Get hotel details
-  getById: (hotelId) => 
+  getById: (hotelId) =>
     api.get(`/hotels/${hotelId}`),
-  
+
   // Get hotel rooms
-  getRooms: (hotelId) => 
+  getRooms: (hotelId) =>
     api.get(`/hotels/${hotelId}/rooms`),
 };
 
 // 3. BOOKING MANAGEMENT
 export const bookings = {
   // Create booking (Checkout)
-  create: (bookingData) => 
+  create: (bookingData) =>
     api.post('/bookings', bookingData),
-  
+
   // Get user bookings (My Bookings page)
-  getMy: () => 
+  getMy: () =>
     api.get('/bookings/my-bookings'),
-  
+
   // Update booking
-  update: (bookingId, data) => 
+  update: (bookingId, data) =>
     api.put(`/bookings/${bookingId}`, data),
-  
+
   // Cancel booking
-  cancel: (bookingId) => 
+  cancel: (bookingId) =>
     api.delete(`/bookings/${bookingId}`),
 };
 
 // 4. INVOICE SERVICE (.NET)
 export const invoice = {
   // Generate PDF invoice
-  generate: (invoiceData) => 
+  generate: (invoiceData) =>
     axios.post('http://localhost:5000/api/invoice/generate', invoiceData, {
       responseType: 'blob',
     }),
@@ -105,26 +110,37 @@ export const invoice = {
 // 5. REVIEWS
 export const reviews = {
   // Create review
-  create: (reviewData) => 
+  create: (reviewData) =>
     api.post('/reviews', reviewData),
-  
+
   // Get hotel reviews
-  getHotelReviews: (hotelId) => 
+  getHotelReviews: (hotelId) =>
     api.get(`/reviews/hotel/${hotelId}`),
-  
+
   // Get user reviews
-  getMyReviews: () => 
+  getMyReviews: () =>
     api.get('/reviews/my-reviews'),
 };
 
-// 6. RECENTLY VIEWED
+// 6. COMPLAINTS
+export const complaints = {
+  // Create complaint
+  create: (complaintData) =>
+    api.post('/complaints', complaintData),
+
+  // Get my complaints
+  getMy: () =>
+    api.get('/complaints/my-complaints'),
+};
+
+// 7. RECENTLY VIEWED
 export const recentlyViewed = {
   // Add hotel to recently viewed
-  add: (hotelId) => 
+  add: (hotelId) =>
     api.post(`/recently-viewed/hotel/${hotelId}`),
-  
+
   // Get recently viewed hotels
-  get: () => 
+  get: () =>
     api.get('/recently-viewed'),
 };
 
@@ -134,7 +150,7 @@ export const recentlyViewed = {
 export const homePage = {
   // Load hotels for display
   loadHotels: () => hotels.getAll(),
-  
+
   // Search hotels from search bar
   searchHotels: (searchParams) => hotels.search(searchParams.city, searchParams.destination),
 };
@@ -142,12 +158,12 @@ export const homePage = {
 // SEARCH RESULTS PAGE APIs
 export const searchPage = {
   // Search with filters
-  searchWithFilters: (filters) => 
+  searchWithFilters: (filters) =>
     hotels.search(filters.city, filters.destination),
-  
+
   // Get hotel details for modal/popup
   getHotelDetails: (hotelId) => hotels.getById(hotelId),
-  
+
   // Get rooms for booking
   getHotelRooms: (hotelId) => hotels.getRooms(hotelId),
 };
@@ -156,7 +172,7 @@ export const searchPage = {
 export const hotelDetailsPage = {
   // Load hotel info
   loadHotel: (hotelId) => hotels.getById(hotelId),
-  
+
   // Load available rooms
   loadRooms: (hotelId) => hotels.getRooms(hotelId),
 };
@@ -166,20 +182,20 @@ export const cartPage = {
   // Create bookings from cart items
   checkout: async (cartItems) => {
     // Filter and validate cart items
-    const validItems = cartItems.filter(item => 
-      item.checkIn && 
-      item.checkOut && 
-      item.checkIn !== 'Not selected' && 
+    const validItems = cartItems.filter(item =>
+      item.checkIn &&
+      item.checkOut &&
+      item.checkIn !== 'Not selected' &&
       item.checkOut !== 'Not selected' &&
       item.checkIn !== '' &&
       item.checkOut !== ''
     );
-    
+
     if (validItems.length === 0) {
       throw new Error('Please select valid check-in and check-out dates for all items');
     }
-    
-    const bookingPromises = validItems.map(item => 
+
+    const bookingPromises = validItems.map(item =>
       bookings.create({
         hotelId: item.hotelId || 1,
         roomTypeId: item.roomTypeId || 1,
@@ -198,13 +214,13 @@ export const cartPage = {
 export const bookingsPage = {
   // Load user bookings
   loadBookings: () => bookings.getMy(),
-  
+
   // Cancel booking
   cancelBooking: (bookingId) => bookings.cancel(bookingId),
-  
+
   // Update booking
   updateBooking: (bookingId, data) => bookings.update(bookingId, data),
-  
+
   // Download invoice
   downloadInvoice: (bookingData) => invoice.generate(bookingData),
 };
@@ -213,7 +229,7 @@ export const bookingsPage = {
 export const authPage = {
   // User login
   login: (email, password) => auth.login(email, password),
-  
+
   // User registration
   register: (userData) => auth.register(userData),
 };

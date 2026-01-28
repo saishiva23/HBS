@@ -16,8 +16,14 @@ const LoginPage = () => {
         e.preventDefault();
         setLoading(true);
 
+        // Minimum loading time for better UX (prevents flickering)
+        const minLoadTime = new Promise(resolve => setTimeout(resolve, 800));
+
         try {
-            const result = await login(email, password);
+            const [result] = await Promise.all([
+                login(email, password),
+                minLoadTime
+            ]);
 
             if (result.success) {
                 const user = result.user;
@@ -35,9 +41,11 @@ const LoginPage = () => {
                 }
             } else {
                 toast.error(result.error || 'Login failed');
+                setPassword(''); // Clear password on error
             }
         } catch {
             toast.error('An unexpected error occurred');
+            setPassword('');
         } finally {
             setLoading(false);
         }
