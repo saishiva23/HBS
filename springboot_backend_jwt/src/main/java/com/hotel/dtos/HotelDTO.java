@@ -34,5 +34,4 @@ public class HotelDTO {
     // Admin/Owner fields
     private Long ownerId;
     private String status;
-    private String rejectionReason;
 }

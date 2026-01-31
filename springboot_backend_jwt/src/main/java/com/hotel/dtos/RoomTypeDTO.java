@@ -16,6 +16,7 @@ public class RoomTypeDTO {
     private BigDecimal pricePerNight;
     private Integer capacity;
     private Integer totalRooms;
+    private String beds;
     private List<String> amenities;
     private List<String> images;
 }

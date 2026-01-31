@@ -3,22 +3,23 @@ package com.hotel.service;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hotel.custom_exceptions.InvalidInputException;
 import com.hotel.custom_exceptions.ResourceNotFoundException;
 import com.hotel.dtos.HotelDTO;
-import com.hotel.entities.Hotel;
-import com.hotel.entities.RoomType;
-import com.hotel.repository.HotelRepository;
-import com.hotel.repository.RoomTypeRepository;
-import com.hotel.repository.RoomRepository;
-import com.hotel.custom_exceptions.InvalidInputException;
 import com.hotel.dtos.HotelRegistrationDTO;
 import com.hotel.dtos.UserRegDTO;
+import com.hotel.entities.AccountStatus;
+import com.hotel.entities.Hotel;
+import com.hotel.entities.RoomType;
 import com.hotel.entities.UserRole;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import com.hotel.repository.BookingRepository;
+import com.hotel.repository.HotelRepository;
+import com.hotel.repository.RoomRepository;
+import com.hotel.repository.RoomTypeRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -142,9 +143,28 @@ public class HotelServiceImpl implements HotelService {
             // 3. Set Defaults & Relationships
             hotel.setOwner(owner);
             hotel.setStatus("PENDING"); // Default to PENDING for Admin approval
-            hotel.setRejectionReason(null);
             hotel.setRating(0.0);
             hotel.setRatingCount(0);
+
+            // Set location default if not provided
+            if (hotel.getLocation() == null || hotel.getLocation().trim().isEmpty()) {
+                hotel.setLocation(hotel.getCity() + ", " + (hotel.getState() != null ? hotel.getState() : ""));
+            }
+
+            // Set distance default
+            if (hotel.getDistance() == null || hotel.getDistance().trim().isEmpty()) {
+                hotel.setDistance("Distance not specified");
+            }
+
+            // Set rating text default
+            if (hotel.getRatingText() == null || hotel.getRatingText().trim().isEmpty()) {
+                hotel.setRatingText("Not Rated");
+            }
+
+            // Set default price range
+            if (hotel.getPriceRange() == null || hotel.getPriceRange().trim().isEmpty()) {
+                hotel.setPriceRange("Contact for pricing");
+            }
 
             // Handle JSON fields manually
             try {
@@ -155,12 +175,17 @@ public class HotelServiceImpl implements HotelService {
                 hotel.setAc(hotelDTO.isAc());
                 hotel.setRestaurant(hotelDTO.isRestaurant());
                 hotel.setRoomService(hotelDTO.isRoomService());
-                if (hotelDTO.getImages() != null) {
+
+                // Set default images if none provided
+                if (hotelDTO.getImages() != null && !hotelDTO.getImages().isEmpty()) {
                     hotel.setImages(objectMapper.writeValueAsString(hotelDTO.getImages()));
+                } else {
+                    hotel.setImages("[\"https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=60\"]");
                 }
             } catch (Exception e) {
                 log.error("Error serializing hotel JSON fields", e);
-                // continue, fields will be null or whatever mapper set
+                // Set fallback default image
+                hotel.setImages("[\"https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=60\"]");
             }
 
             // 4. Save
@@ -287,7 +312,7 @@ public class HotelServiceImpl implements HotelService {
 
         com.hotel.entities.User user = modelMapper.map(userDTO, com.hotel.entities.User.class);
         user.setUserRole(UserRole.ROLE_HOTEL_MANAGER); // Explicitly set as Manager
-        user.setAccountStatus("ACTIVE");
+        user.setAccountStatus(AccountStatus.ACTIVE);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         com.hotel.entities.User savedUser = userRepository.save(user);
@@ -338,7 +363,7 @@ public class HotelServiceImpl implements HotelService {
 
         com.hotel.entities.User user = modelMapper.map(userDTO, com.hotel.entities.User.class);
         user.setUserRole(UserRole.ROLE_HOTEL_MANAGER); // Explicitly set as Manager
-        user.setAccountStatus("ACTIVE");
+        user.setAccountStatus(AccountStatus.ACTIVE);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         com.hotel.entities.User savedUser = userRepository.save(user);
@@ -350,9 +375,28 @@ public class HotelServiceImpl implements HotelService {
 
         hotel.setOwner(savedUser);
         hotel.setStatus("PENDING"); // Default to PENDING for Admin approval
-        hotel.setRejectionReason(null);
         hotel.setRating(0.0);
         hotel.setRatingCount(0);
+
+        // Set location default
+        if (hotel.getLocation() == null || hotel.getLocation().trim().isEmpty()) {
+            hotel.setLocation(hotel.getCity() + ", " + (hotel.getState() != null ? hotel.getState() : ""));
+        }
+
+        // Set distance default
+        if (hotel.getDistance() == null || hotel.getDistance().trim().isEmpty()) {
+            hotel.setDistance("Distance not specified");
+        }
+
+        // Set rating text default
+        if (hotel.getRatingText() == null || hotel.getRatingText().trim().isEmpty()) {
+            hotel.setRatingText("Not Rated");
+        }
+
+        // Set default price range
+        if (hotel.getPriceRange() == null || hotel.getPriceRange().trim().isEmpty()) {
+            hotel.setPriceRange("Contact for pricing");
+        }
 
         // Handle JSON fields manually
         try {
@@ -362,11 +406,16 @@ public class HotelServiceImpl implements HotelService {
             hotel.setAc(hotelDTO.isAc());
             hotel.setRestaurant(hotelDTO.isRestaurant());
             hotel.setRoomService(hotelDTO.isRoomService());
-            if (hotelDTO.getImages() != null) {
+
+            // Set default images if none provided
+            if (hotelDTO.getImages() != null && !hotelDTO.getImages().isEmpty()) {
                 hotel.setImages(objectMapper.writeValueAsString(hotelDTO.getImages()));
+            } else {
+                hotel.setImages("[\"https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=60\"]");
             }
         } catch (Exception e) {
             log.error("Error serializing hotel JSON fields", e);
+            hotel.setImages("[\"https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=60\"]");
         }
 
         Hotel savedHotel = hotelRepository.save(hotel);

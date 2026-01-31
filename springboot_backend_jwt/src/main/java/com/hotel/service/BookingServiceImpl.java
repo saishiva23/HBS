@@ -6,7 +6,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +35,7 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final HotelRepository hotelRepository;
     private final RoomTypeRepository roomTypeRepository;
-    private final ModelMapper modelMapper;
+    private final RoomOccupancyService roomOccupancyService;
 
     @Override
     public BookingResponseDTO createBooking(BookingDTO bookingDTO, String userEmail) {
@@ -65,20 +64,39 @@ public class BookingServiceImpl implements BookingService {
                 throw new IllegalArgumentException("Check-out date must be at least one day after check-in date");
             }
 
-            // 5. Calculate total price
-            long days = ChronoUnit.DAYS.between(bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate());
-            BigDecimal roomPrice = roomType.getPricePerNight().multiply(BigDecimal.valueOf(days));
-            BigDecimal totalPrice = roomPrice
+            // 5. Check Availability
+            boolean isAvailable = roomOccupancyService.isRoomTypeAvailable(
+                    bookingDTO.getHotelId(),
+                    bookingDTO.getRoomTypeId(),
+                    bookingDTO.getCheckInDate(),
+                    bookingDTO.getCheckOutDate(),
+                    bookingDTO.getRooms() != null ? bookingDTO.getRooms() : 1);
+
+            if (!isAvailable) {
+                throw new IllegalStateException("Selected room type is not available for the chosen dates");
+            }
+
+            // 6. Calculate Pricing (Security: Always calculate from DB to prevent manipulation)
+            long nights = ChronoUnit.DAYS.between(bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate());
+            BigDecimal frozenPricePerNight = roomType.getPricePerNight();
+
+            BigDecimal baseAmount = frozenPricePerNight
+                    .multiply(BigDecimal.valueOf(nights))
                     .multiply(BigDecimal.valueOf(bookingDTO.getRooms() != null ? bookingDTO.getRooms() : 1));
 
-            // 6. Create Booking entity
+            // 7. Create Booking entity
             Booking booking = new Booking();
             booking.setUser(user);
             booking.setHotel(hotel);
             booking.setRoomType(roomType);
             booking.setCheckInDate(bookingDTO.getCheckInDate());
             booking.setCheckOutDate(bookingDTO.getCheckOutDate());
-            booking.setTotalPrice(totalPrice);
+            booking.setTotalPrice(baseAmount);
+
+            // Store frozen pricing fields
+            booking.setPricePerNight(frozenPricePerNight);
+            booking.setNights((int) nights);
+            booking.setBaseAmount(baseAmount);
             booking.setStatus("CONFIRMED");
             booking.setAdults(bookingDTO.getAdults() != null ? bookingDTO.getAdults() : 1);
             booking.setChildren(bookingDTO.getChildren() != null ? bookingDTO.getChildren() : 0);
@@ -100,8 +118,11 @@ public class BookingServiceImpl implements BookingService {
             booking.setGuestEmail(bookingDTO.getGuestEmail() != null ? bookingDTO.getGuestEmail() : user.getEmail());
             booking.setGuestPhone(bookingDTO.getGuestPhone() != null ? bookingDTO.getGuestPhone() : user.getPhone());
 
-            // 7. Save booking to database
+            // 8. Save booking and create occupancy
             Booking savedBooking = bookingRepository.save(booking);
+            
+            roomOccupancyService.createRoomOccupancy(savedBooking);
+            
             log.info("Booking created successfully with ID: {} and reference: {}", savedBooking.getId(),
                     savedBooking.getBookingReference());
 
@@ -179,11 +200,17 @@ public class BookingServiceImpl implements BookingService {
                 booking.setRooms(bookingDTO.getRooms());
             }
 
-            // Recalculate total price
-            long days = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
-            BigDecimal roomPrice = booking.getRoomType().getPricePerNight().multiply(BigDecimal.valueOf(days));
-            BigDecimal totalPrice = roomPrice.multiply(BigDecimal.valueOf(booking.getRooms()));
-            booking.setTotalPrice(totalPrice);
+            // Recalculate pricing fields
+            long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+            booking.setNights((int) nights);
+
+            // Use the frozen price from the original booking for recalculation
+            BigDecimal baseAmount = booking.getPricePerNight()
+                    .multiply(BigDecimal.valueOf(nights))
+                    .multiply(BigDecimal.valueOf(booking.getRooms()));
+
+            booking.setBaseAmount(baseAmount);
+            booking.setTotalPrice(baseAmount); // Or apply any additional pricing logic if needed
 
             Booking updatedBooking = bookingRepository.save(booking);
             log.info("Booking updated successfully: {}", updatedBooking.getBookingReference());

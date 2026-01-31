@@ -35,6 +35,7 @@ public class BookingDTO {
     private Integer children = 0;
     private Integer rooms = 1;
     private BigDecimal totalPrice;
+    private BigDecimal pricePerNight; // Frozen price from checkout
 
     // Guest details for booking
     private String guestFirstName;

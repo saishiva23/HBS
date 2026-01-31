@@ -63,8 +63,22 @@ export const HotelProvider = ({ children }) => {
     // Fetch hotels on mount
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (token) {
-            fetchHotels();
+        const userStr = localStorage.getItem('user');
+        
+        if (token && userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                // Only fetch owner hotels if the user is a HOTEL_MANAGER
+                if (user.role === 'ROLE_HOTEL_MANAGER') {
+                    fetchHotels();
+                } else {
+                    console.log('[HotelContext] User is not a manager, skipping owner hotel fetch');
+                    setLoading(false);
+                }
+            } catch (e) {
+                console.error('[HotelContext] Error parsing user details:', e);
+                setLoading(false);
+            }
         } else {
             console.warn('[HotelContext] No auth token found, skipping hotel fetch');
             setLoading(false);
@@ -74,9 +88,18 @@ export const HotelProvider = ({ children }) => {
         // This ensures owners see updated hotel status after admin approval/deletion
         const handleFocus = () => {
             const currentToken = localStorage.getItem('token');
-            if (currentToken) {
-                console.log('[HotelContext] Window focused, refreshing hotel data...');
-                fetchHotels();
+            const currentUserStr = localStorage.getItem('user');
+            
+            if (currentToken && currentUserStr) {
+                try {
+                    const currentUser = JSON.parse(currentUserStr);
+                    if (currentUser.role === 'ROLE_HOTEL_MANAGER') {
+                        console.log('[HotelContext] Window focused, refreshing hotel data...');
+                        fetchHotels();
+                    }
+                } catch (e) {
+                    // Ignore parsing errors
+                }
             }
         };
 

@@ -16,11 +16,10 @@ import com.hotel.custom_exceptions.ResourceNotFoundException;
 import com.hotel.dtos.ApiResponse;
 import com.hotel.dtos.BookingResponseDTO;
 import com.hotel.dtos.HotelDTO;
+import com.hotel.dtos.ComplaintResponseDTO;
 import com.hotel.dtos.RoomDTO;
 import com.hotel.dtos.RoomTypeDTO;
 import com.hotel.entities.Booking;
-import com.hotel.entities.Complaint;
-import com.hotel.entities.ComplaintStatus;
 import com.hotel.entities.Hotel;
 import com.hotel.entities.Room;
 import com.hotel.entities.RoomType;
@@ -75,18 +74,13 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
 
         log.info("Hotel owner ID: {}, Requesting user ID: {}", hotel.getOwner().getId(), owner.getId());
 
-        // TEMPORARY: Allow all hotel owners to access any hotel (for
-        // testing/multi-account scenarios)
-        // TODO: Re-enable strict ownership check before production deployment
-        /*
-         * if (!hotel.getOwner().getId().equals(owner.getId())) {
-         * log.error("Authorization failed - Hotel owner: {}, Requested by: {}",
-         * hotel.getOwner().getId(),
-         * owner.getId());
-         * throw new IllegalArgumentException("Not authorized to access this hotel");
-         * }
-         */
-        log.info("Authorization check bypassed - allowing access");
+        // Strict ownership check
+        if (!hotel.getOwner().getId().equals(owner.getId())) {
+            log.error("Authorization failed - Hotel owner: {}, Requested by: {}",
+                    hotel.getOwner().getId(),
+                    owner.getId());
+            throw new IllegalArgumentException("Not authorized to access this hotel");
+        }
 
         return hotel;
     }
@@ -98,9 +92,7 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
 
         Hotel hotel = modelMapper.map(hotelDTO, Hotel.class);
         hotel.setOwner(owner);
-        hotel.setOwner(owner);
         hotel.setStatus("PENDING"); // Requires admin approval
-        hotel.setRejectionReason(null);
 
         processHotelImages(hotel, hotelDTO.getImages());
 
@@ -157,7 +149,9 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
 
         processRoomTypeJsonFields(roomType, roomTypeDTO.getAmenities(), roomTypeDTO.getImages());
 
-        return roomTypeRepository.save(roomType);
+        RoomType saved = roomTypeRepository.save(roomType);
+        updateHotelPriceRange(hotel);
+        return saved;
     }
 
     @Override
@@ -175,13 +169,18 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
         roomType.setDescription(roomTypeDTO.getDescription());
         roomType.setPricePerNight(roomTypeDTO.getPricePerNight());
         roomType.setCapacity(roomTypeDTO.getCapacity());
-        if (roomTypeDTO.getTotalRooms() != null) {
+        roomType.setBeds(roomTypeDTO.getBeds());
+        if (roomTypeDTO.getTotalRooms() != null && roomTypeDTO.getTotalRooms() > 0) {
             roomType.setTotalRooms(roomTypeDTO.getTotalRooms());
         }
 
         processRoomTypeJsonFields(roomType, roomTypeDTO.getAmenities(), roomTypeDTO.getImages());
 
-        return roomTypeRepository.save(roomType);
+        RoomType saved = roomTypeRepository.save(roomType);
+        Hotel hotel = hotelRepository.findById(hotelId).orElse(null);
+        if (hotel != null)
+            updateHotelPriceRange(hotel);
+        return saved;
     }
 
     @Override
@@ -196,6 +195,9 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
         }
 
         roomTypeRepository.delete(roomType);
+        Hotel hotel = hotelRepository.findById(hotelId).orElse(null);
+        if (hotel != null)
+            updateHotelPriceRange(hotel);
         return new ApiResponse("Success", "Room type deleted successfully");
     }
 
@@ -455,32 +457,24 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
         return stats;
     }
 
-    // Customer Experience - Complaints
+    // Customer Experience - Complaints (Placeholder implementations)
     @Override
     public List<com.hotel.dtos.ComplaintResponseDTO> getHotelComplaints(Long hotelId, String ownerEmail) {
         getOwnerHotelDetails(hotelId, ownerEmail); // Verify ownership
-
         List<com.hotel.entities.Complaint> complaints = complaintRepository.findByHotelId(hotelId);
-        return complaints.stream()
-                .map(this::mapToComplaintResponse)
-                .collect(Collectors.toList());
+        return complaints.stream().map(this::mapToComplaintResponse).collect(Collectors.toList());
     }
 
     @Override
     public ApiResponse resolveComplaint(Long complaintId, String resolution, String ownerEmail) {
         com.hotel.entities.Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with ID: " + complaintId));
 
-        // Verify owner owns this hotel
-        User owner = userRepository.findByEmail(ownerEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Owner not found"));
+        // Verify owner has rights to this complaint's hotel
+        getOwnerHotelDetails(complaint.getHotel().getId(), ownerEmail);
 
-        if (!complaint.getHotel().getOwner().getId().equals(owner.getId())) {
-            throw new IllegalArgumentException("Not authorized to resolve this complaint");
-        }
-
-        complaint.setStatus(ComplaintStatus.RESOLVED);
         complaint.setResolution(resolution);
+        complaint.setStatus(com.hotel.entities.ComplaintStatus.RESOLVED);
         complaint.setResolvedAt(java.time.LocalDateTime.now());
         complaintRepository.save(complaint);
 
@@ -500,17 +494,16 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
         return dto;
     }
 
-    // Helper method to map Complaint to ComplaintResponseDTO
-    private com.hotel.dtos.ComplaintResponseDTO mapToComplaintResponse(com.hotel.entities.Complaint complaint) {
-        com.hotel.dtos.ComplaintResponseDTO dto = new com.hotel.dtos.ComplaintResponseDTO();
+    private ComplaintResponseDTO mapToComplaintResponse(com.hotel.entities.Complaint complaint) {
+        ComplaintResponseDTO dto = new ComplaintResponseDTO();
         dto.setId(complaint.getId());
-        dto.setGuestName(complaint.getUser().getFirstName() + " " + complaint.getUser().getLastName());
-        dto.setGuestEmail(complaint.getUser().getEmail());
         dto.setSubject(complaint.getSubject());
         dto.setDescription(complaint.getDescription());
-        dto.setStatus(complaint.getStatus().name()); // Convert enum to string
+        dto.setStatus(complaint.getStatus().name());
         dto.setCreatedAt(complaint.getCreatedAt());
         dto.setResolvedAt(complaint.getResolvedAt());
+        dto.setGuestName(complaint.getGuestName());
+        dto.setBookingReference(complaint.getBooking().getBookingReference());
         dto.setResolution(complaint.getResolution());
         return dto;
     }
@@ -602,5 +595,32 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
             return "\"" + field.replace("\"", "\"\"") + "\"";
         }
         return field;
+    }
+
+    private void updateHotelPriceRange(Hotel hotel) {
+        try {
+            List<RoomType> rooms = roomTypeRepository.findByHotelId(hotel.getId());
+            if (rooms.isEmpty()) {
+                hotel.setPriceRange("Price not available");
+            } else {
+                BigDecimal min = rooms.stream()
+                        .map(RoomType::getPricePerNight)
+                        .min(BigDecimal::compareTo)
+                        .orElse(BigDecimal.ZERO);
+                BigDecimal max = rooms.stream()
+                        .map(RoomType::getPricePerNight)
+                        .max(BigDecimal::compareTo)
+                        .orElse(BigDecimal.ZERO);
+
+                if (min.compareTo(max) == 0) {
+                    hotel.setPriceRange("₹" + min.toString());
+                } else {
+                    hotel.setPriceRange("₹" + min.toString() + " - ₹" + max.toString());
+                }
+            }
+            hotelRepository.save(hotel);
+        } catch (Exception e) {
+            log.error("Error updating hotel price range", e);
+        }
     }
 }

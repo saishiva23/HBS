@@ -15,6 +15,7 @@ import com.hotel.dtos.AuthRequest;
 import com.hotel.dtos.AuthResp;
 import com.hotel.dtos.UserDTO;
 import com.hotel.dtos.UserRegDTO;
+import com.hotel.entities.AccountStatus;
 import com.hotel.entities.User;
 import com.hotel.entities.UserRole;
 import com.hotel.repository.UserRepository;
@@ -54,7 +55,7 @@ public class UserServiceImpl implements UserService {
 
             User user = modelMapper.map(dto, User.class);
             user.setUserRole(UserRole.ROLE_CUSTOMER);
-            user.setAccountStatus("ACTIVE"); // Set default account status
+            user.setAccountStatus(AccountStatus.ACTIVE); // Set default account status
 
             String encodedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(encodedPassword);
@@ -135,9 +136,8 @@ public class UserServiceImpl implements UserService {
             }
 
             // Check if account is suspended
-            if ("SUSPENDED".equals(user.getAccountStatus())) {
-                throw new AuthenticationFailedException("Account suspended: " +
-                        (user.getSuspensionReason() != null ? user.getSuspensionReason() : "Contact admin"));
+            if (AccountStatus.SUSPENDED.equals(user.getAccountStatus())) {
+                throw new AuthenticationFailedException("Account suspended: Contact admin");
             }
 
             String jwtToken = jwtUtils.generateToken(user.getEmail(), user.getUserRole().name(), user.getId());

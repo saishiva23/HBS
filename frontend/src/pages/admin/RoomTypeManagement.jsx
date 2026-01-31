@@ -46,7 +46,6 @@ const RoomTypeManagement = () => {
 
   const [formData, setFormData] = useState({
     name: 'Standard',
-    type: 'Non-AC',
     beds: '2 Single Beds',
     capacity: 2,
     totalRooms: 0,
@@ -61,7 +60,6 @@ const RoomTypeManagement = () => {
     setEditingRoom(null);
     setFormData({
       name: 'Standard',
-      type: 'Non-AC',
       beds: '2 Single Beds',
       capacity: 2,
       totalRooms: 0,
@@ -76,7 +74,6 @@ const RoomTypeManagement = () => {
     setEditingRoom(room);
     setFormData({
       name: room.name,
-      type: room.description && room.description.includes('AC') ? 'AC' : 'Non-AC',
       beds: '2 Single Beds',
       capacity: room.capacity,
       pricePerNight: room.pricePerNight,
@@ -178,12 +175,6 @@ const RoomTypeManagement = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-xl font-bold dark:text-white">{room.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${room.type === 'AC'
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                          }`}>
-                          {room.type === 'AC' ? <><FaSnowflake className="inline mr-1" />AC</> : <><FaFan className="inline mr-1" />Non-AC</>}
-                        </span>
                       </div>
                       <p className="text-gray-600 dark:text-gray-400 text-sm">{room.description}</p>
                     </div>
@@ -261,30 +252,24 @@ const RoomTypeManagement = () => {
                     const name = e.target.value;
                     let beds = '4 Beds';
                     let capacity = 4;
-                    let type = 'Non-AC';
 
                     if (name === 'Standard AC') {
                       beds = '2 Single Beds';
                       capacity = 2;
-                      type = 'AC';
                     } else if (name === 'Deluxe') {
                       beds = '1 King Bed';
                       capacity = 2;
-                      type = 'AC';
                     } else if (name === 'Family') {
                       beds = '4 Beds';
                       capacity = 4;
-                      type = 'AC';
                     } else if (name === 'Standard') {
                       beds = '2 Single Beds';
                       capacity = 2;
-                      type = 'Non-AC';
                     }
 
                     setFormData({
                       ...formData,
                       name,
-                      type,
                       beds,
                       capacity
                     });

@@ -1,8 +1,6 @@
 package com.hotel;
 
 import org.modelmapper.Conditions;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -15,24 +13,35 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Application {
 
-    public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+		log.info("Server started on port 8080");
+	}
 
-    @Bean
-    public ModelMapper modelMapper() {
-        log.info("Creating and configuring ModelMapper");
-        ModelMapper mapper = new ModelMapper();
-        
-        mapper.getConfiguration()
-                .setMatchingStrategy(MatchingStrategies.STRICT)
-                .setPropertyCondition(Conditions.isNotNull());
-        
-        return mapper;
-    }
+	// centralized method to config model mapper
+	@Bean
+	public org.modelmapper.ModelMapper modelMapper() {
+		log.info("Configuring ModelMapper bean");
+		org.modelmapper.ModelMapper modelMapper = new org.modelmapper.ModelMapper();
+		// Skip null values when mapping to avoid overwriting existing data
+		modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
+		return modelMapper;
+	}
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+	// centralized method to config password encoder
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		log.info("in password encoder bean");
+		return new BCryptPasswordEncoder();
+	}
+
+	@Bean
+	public org.springframework.boot.CommandLineRunner debugRunner(com.hotel.repository.RoomTypeRepository repo) {
+		return args -> {
+			log.info("=== DEBUG: STARTING ROOM TYPE CHECK ===");
+			repo.findAll().forEach(rt -> log.info("Found RoomType - ID: {}, Name: {}, HotelID: {}", rt.getId(),
+					rt.getName(), rt.getHotel().getId()));
+			log.info("=== DEBUG: END ROOM TYPE CHECK ===");
+		};
+	}
 }

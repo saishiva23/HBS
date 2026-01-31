@@ -9,7 +9,10 @@ import {
   XMarkIcon,
   MinusIcon,
   PlusIcon,
+  MapPinIcon,
+  BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
+import customerAPI from "../services/customerAPI";
 
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
@@ -29,8 +32,13 @@ const SearchBar = ({ initialValues }) => {
   const [openCalendar, setOpenCalendar] = useState(false);
   const [openGuests, setOpenGuests] = useState(false);
   const [destination, setDestination] = useState(initialValues?.destination || "");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const navigate = useNavigate();
+  const suggestionsRef = useRef(null);
 
   // Animated label state
   const [currentLabelIndex, setCurrentLabelIndex] = useState(0);
@@ -84,6 +92,74 @@ const SearchBar = ({ initialValues }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch search suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (destination.trim().length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setLoadingSuggestions(true);
+      try {
+        // Fetch hotels matching the search term
+        const hotels = await customerAPI.hotels.getAll();
+        
+        // Filter and create suggestions
+        const searchTerm = destination.toLowerCase();
+        const hotelSuggestions = hotels
+          .filter(hotel => 
+            hotel.name.toLowerCase().includes(searchTerm) ||
+            hotel.city.toLowerCase().includes(searchTerm) ||
+            hotel.state?.toLowerCase().includes(searchTerm) ||
+            hotel.address?.toLowerCase().includes(searchTerm)
+          )
+          .slice(0, 8)
+          .map(hotel => ({
+            type: 'hotel',
+            name: hotel.name,
+            location: `${hotel.city}, ${hotel.state || ''}`,
+            city: hotel.city,
+            state: hotel.state,
+            id: hotel.id
+          }));
+
+        // Extract unique cities and states
+        const cities = [...new Set(hotels.map(h => h.city))]
+          .filter(city => city.toLowerCase().includes(searchTerm))
+          .slice(0, 3)
+          .map(city => ({
+            type: 'city',
+            name: city,
+            location: 'City'
+          }));
+
+        const states = [...new Set(hotels.map(h => h.state).filter(Boolean))]
+          .filter(state => state.toLowerCase().includes(searchTerm))
+          .slice(0, 3)
+          .map(state => ({
+            type: 'state',
+            name: state,
+            location: 'State'
+          }));
+
+        // Combine suggestions: cities first, then states, then hotels
+        const combined = [...cities, ...states, ...hotelSuggestions];
+        setSuggestions(combined);
+        setShowSuggestions(combined.length > 0);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [destination]);
+
   // Synchronize state with props when initialValues change (e.g. URL update)
   useEffect(() => {
     if (initialValues) {
@@ -122,11 +198,19 @@ const SearchBar = ({ initialValues }) => {
       ) {
         setOpenGuests(false);
       }
+
+      if (
+        showSuggestions &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target)
+      ) {
+        setShowSuggestions(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openCalendar, openGuests]);
+  }, [openCalendar, openGuests, showSuggestions]);
 
   // ESC close
   useEffect(() => {
@@ -134,12 +218,73 @@ const SearchBar = ({ initialValues }) => {
       if (e.key === "Escape") {
         setOpenCalendar(false);
         setOpenGuests(false);
+        setShowSuggestions(false);
       }
     };
 
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, []);
+
+  // Handle suggestion selection
+  const handleSelectSuggestion = (suggestion) => {
+    setDestination(suggestion.name);
+    setShowSuggestions(false);
+    setSelectedIndex(-1);
+  };
+
+  // Handle keyboard navigation in suggestions
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === "Enter" && destination.trim()) {
+        const params = new URLSearchParams({
+          destination: destination,
+          adults: String(adults),
+          children: String(children),
+          rooms: String(rooms),
+          start: format(dateRange[0].startDate, "dd MMM"),
+          end: format(dateRange[0].endDate, "dd MMM"),
+        });
+        navigate(`/search?${params.toString()}`);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+          handleSelectSuggestion(suggestions[selectedIndex]);
+        } else if (destination.trim()) {
+          const params = new URLSearchParams({
+            destination: destination,
+            adults: String(adults),
+            children: String(children),
+            rooms: String(rooms),
+            start: format(dateRange[0].startDate, "dd MMM"),
+            end: format(dateRange[0].endDate, "dd MMM"),
+          });
+          navigate(`/search?${params.toString()}`);
+        }
+        break;
+      case "Escape":
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="relative mt-0">
@@ -148,7 +293,7 @@ const SearchBar = ({ initialValues }) => {
       <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl border dark:border-gray-700 overflow-hidden flex flex-col md:flex-row transition-colors">
 
         {/* Destination with Animated Label */}
-        <div className="flex items-center gap-4 px-6 py-4 flex-1 border-b md:border-b-0 md:border-r dark:border-gray-700">
+        <div className="flex items-center gap-4 px-6 py-4 flex-1 border-b md:border-b-0 md:border-r dark:border-gray-700 relative">
           <MagnifyingGlassIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
           <div className="w-full">
             {/* Animated Label */}
@@ -164,32 +309,88 @@ const SearchBar = ({ initialValues }) => {
             <input
               type="text"
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="Where to?"
-              className="outline-none font-semibold text-lg w-full bg-transparent dark:text-white dark:placeholder-gray-400"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && destination.trim()) {
-                  const params = new URLSearchParams({
-                    destination: destination,
-                    adults: String(adults),
-                    children: String(children),
-                    rooms: String(rooms),
-                    start: format(dateRange[0].startDate, "dd MMM"),
-                    end: format(dateRange[0].endDate, "dd MMM"),
-                  });
-                  navigate(`/search?${params.toString()}`);
+              onChange={(e) => {
+                setDestination(e.target.value);
+                setSelectedIndex(-1);
+              }}
+              onFocus={() => {
+                if (suggestions.length > 0) {
+                  setShowSuggestions(true);
                 }
               }}
+              placeholder="Where to?"
+              className="outline-none font-semibold text-lg w-full bg-transparent dark:text-white dark:placeholder-gray-400"
+              onKeyDown={handleKeyDown}
             />
           </div>
           {/* Clear button when there's text */}
           {destination && (
             <button
-              onClick={() => setDestination("")}
+              onClick={() => {
+                setDestination("");
+                setShowSuggestions(false);
+                setSuggestions([]);
+              }}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             >
               <XMarkIcon className="h-5 w-5 text-gray-400" />
             </button>
+          )}
+
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              ref={suggestionsRef}
+              className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 shadow-2xl rounded-xl border dark:border-gray-700 max-h-96 overflow-y-auto z-50"
+            >
+              {loadingSuggestions && (
+                <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                  Searching...
+                </div>
+              )}
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={`${suggestion.type}-${suggestion.name}-${index}`}
+                  onClick={() => handleSelectSuggestion(suggestion)}
+                  className={`px-4 py-3 cursor-pointer transition-colors flex items-center gap-3 ${
+                    index === selectedIndex
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                  } ${index === 0 ? 'rounded-t-xl' : ''} ${
+                    index === suggestions.length - 1 ? 'rounded-b-xl' : 'border-b dark:border-gray-700'
+                  }`}
+                >
+                  {suggestion.type === 'hotel' ? (
+                    <BuildingOfficeIcon className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                  ) : (
+                    <MapPinIcon className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 dark:text-white truncate">
+                      {suggestion.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {suggestion.location}
+                    </p>
+                  </div>
+                  {suggestion.type === 'city' && (
+                    <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
+                      City
+                    </span>
+                  )}
+                  {suggestion.type === 'state' && (
+                    <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full">
+                      State
+                    </span>
+                  )}
+                  {suggestion.type === 'hotel' && (
+                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full">
+                      Hotel
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

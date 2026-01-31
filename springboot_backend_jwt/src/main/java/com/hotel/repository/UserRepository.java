@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import com.hotel.dtos.UserDTO;
 import com.hotel.entities.User;
 import com.hotel.entities.UserRole;
+import com.hotel.entities.AccountStatus;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     /*
@@ -51,5 +52,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhone(String phone);
 
-    List<User> findByAccountStatus(String accountStatus);
+    List<User> findByAccountStatus(AccountStatus accountStatus);
 }

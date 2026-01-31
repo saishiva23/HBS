@@ -19,6 +19,7 @@ import com.hotel.entities.Booking;
 import com.hotel.entities.Hotel;
 import com.hotel.entities.User;
 import com.hotel.entities.Location;
+import com.hotel.entities.AccountStatus;
 import com.hotel.dtos.LocationDTO;
 import com.hotel.repository.BookingRepository;
 import com.hotel.repository.HotelRepository;
@@ -69,7 +70,6 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId));
 
         hotel.setStatus("APPROVED");
-        hotel.setRejectionReason(null);
         hotelRepository.save(hotel);
 
         log.info("Hotel approved: {}", hotelId);
@@ -85,10 +85,9 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId));
 
         hotel.setStatus("REJECTED");
-        hotel.setRejectionReason(reason);
         hotelRepository.save(hotel);
 
-        log.info("Hotel rejected: {} with reason: {}", hotelId, reason);
+        log.info("Hotel rejected: {}", hotelId);
         return new ApiResponse("Success", "Hotel rejected successfully");
     }
 
@@ -143,7 +142,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<User> getSuspendedUsers() {
-        return userRepository.findByAccountStatus("SUSPENDED");
+        return userRepository.findByAccountStatus(AccountStatus.SUSPENDED);
     }
 
     @Override
@@ -154,11 +153,10 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        user.setAccountStatus("SUSPENDED");
-        user.setSuspensionReason(reason);
+        user.setAccountStatus(AccountStatus.SUSPENDED);
         userRepository.save(user);
 
-        log.info("User suspended: {} with reason: {}", userId, reason);
+        log.info("User suspended: {}", userId);
         return new ApiResponse("Success", "User suspended successfully");
     }
 
@@ -170,8 +168,7 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
-        user.setAccountStatus("ACTIVE");
-        user.setSuspensionReason(null);
+        user.setAccountStatus(AccountStatus.ACTIVE);
         userRepository.save(user);
 
         log.info("User activated: {}", userId);

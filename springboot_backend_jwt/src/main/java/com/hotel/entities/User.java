@@ -62,11 +62,9 @@ public class User extends BaseEntity {
     private byte[] image;
 
     // Account management fields
-    @Column(name = "account_status", length = 20)
-    private String accountStatus = "ACTIVE"; // ACTIVE, SUSPENDED
-
-    @Column(name = "suspension_reason", length = 100)
-    private String suspensionReason;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status")
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
     public User(String firstName, String lastName, String email, String password, LocalDate dob, Integer regAmount,
             String phone, String address) {

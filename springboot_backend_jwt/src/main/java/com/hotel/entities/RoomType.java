@@ -37,9 +37,12 @@ public class RoomType extends BaseEntity {
     @Column(name = "total_rooms", nullable = false)
     private Integer totalRooms = 0;
 
+    private String beds;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id", nullable = false)
     @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Hotel hotel;
 
     @Column(columnDefinition = "JSON")

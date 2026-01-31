@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import OwnerLayout from '../../layouts/OwnerLayout';
 import { useHotel } from '../../context/HotelContext';
 import { ownerHotelManagement } from '../../services/completeAPI';
+import { normalizeImageUrl, getUrlTypeMessage } from '../../utils/imageUtils';
+import toast from 'react-hot-toast';
 import {
     FaBuilding,
     FaMapMarkerAlt,
@@ -68,6 +70,7 @@ const HotelProfileManagement = () => {
                 country: data.country || '',
                 address: data.address || '',
                 description: data.description || '',
+                rating: data.starRating || 3,
                 // Missing fields in backend will remain blank or default
             });
 
@@ -142,6 +145,7 @@ const HotelProfileManagement = () => {
         try {
             const payload = {
                 ...hotelData,
+                starRating: hotelData.rating,
                 amenities: [],
                 wifi: amenities.includes('WiFi'),
                 parking: amenities.includes('Parking'),
@@ -438,16 +442,19 @@ const HotelProfileManagement = () => {
                                     <div className="flex gap-4">
                                         <input
                                             type="url"
-                                            placeholder="Paste image URL here (e.g. https://example.com/hotel.jpg)"
+                                            placeholder="Paste any image URL (Google Drive share links auto-convert!)"
                                             className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     const val = e.target.value;
                                                     if (val) {
-                                                        const validUrl = val.match(/^https?:\/\/.+/) ? val : `https://${val}`; // Basic validation check
-                                                        if (validUrl) {
-                                                            setImages(prev => [...prev, validUrl]);
+                                                        const normalizedUrl = normalizeImageUrl(val);
+                                                        if (normalizedUrl) {
+                                                            setImages(prev => [...prev, normalizedUrl]);
+                                                            toast.success(getUrlTypeMessage(val));
                                                             e.target.value = '';
+                                                        } else {
+                                                            toast.error('Invalid image URL. Please try again.');
                                                         }
                                                     }
                                                 }
@@ -459,9 +466,14 @@ const HotelProfileManagement = () => {
                                                 const input = document.getElementById('imageUrlInput');
                                                 const val = input.value;
                                                 if (val) {
-                                                    const validUrl = val.match(/^https?:\/\/.+/) ? val : `https://${val}`;
-                                                    setImages(prev => [...prev, validUrl]);
-                                                    input.value = '';
+                                                    const normalizedUrl = normalizeImageUrl(val);
+                                                    if (normalizedUrl) {
+                                                        setImages(prev => [...prev, normalizedUrl]);
+                                                        toast.success(getUrlTypeMessage(val));
+                                                        input.value = '';
+                                                    } else {
+                                                        toast.error('Invalid image URL. Please check the format.');
+                                                    }
                                                 }
                                             }}
                                             className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2"
@@ -471,7 +483,7 @@ const HotelProfileManagement = () => {
                                         </button>
                                     </div>
                                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                        Paste a direct link to an image hosted online.
+                                        💡 Google Drive share links are automatically converted to direct URLs!
                                     </p>
                                 </div>
 

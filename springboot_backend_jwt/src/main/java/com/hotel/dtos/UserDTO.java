@@ -24,7 +24,6 @@ public class UserDTO {
     private UserRole userRole;
     private int regAmount;
     private String accountStatus;
-    private String suspensionReason;
     private LocalDate createdAt;
 
     public UserDTO(String firstName, String lastName, LocalDate dob) {

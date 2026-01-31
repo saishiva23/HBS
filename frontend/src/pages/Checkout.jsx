@@ -67,9 +67,14 @@ const Checkout = () => {
     try {
       // Create bookings for each cart item
       const bookingPromises = cartItems.map(item => {
+        // Validate required fields - don't use fallbacks that will cause backend errors
+        if (!item.hotelId || !item.roomTypeId) {
+          throw new Error(`Invalid booking: Missing hotel or room type for ${item.hotel}. Please re-add this item to your cart.`);
+        }
+        
         const bookingData = {
-          hotelId: item.hotelId || 1, // Fallback for legacy cart items
-          roomTypeId: item.roomTypeId || 1,
+          hotelId: item.hotelId,
+          roomTypeId: item.roomTypeId,
           checkInDate: item.checkIn,
           checkOutDate: item.checkOut,
           adults: item.guests || 2,

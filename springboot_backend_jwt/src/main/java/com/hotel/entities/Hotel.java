@@ -66,9 +66,6 @@ public class Hotel extends BaseEntity {
     // Approval fields
     private String status; // PENDING, APPROVED, REJECTED
 
-    @Column(name = "rejection_reason")
-    private String rejectionReason;
-
     @Column(name = "price_range")
     private String priceRange;
 
@@ -76,8 +73,6 @@ public class Hotel extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "owner_id")
     @ToString.Exclude
-    // Using JsonIgnoreProperties allows the frontend to receive Owner data
-    // without crashing on Hibernate proxy fields.
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User owner; // Links to ROLE_HOTEL_MANAGER
 }

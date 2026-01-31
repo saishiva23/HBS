@@ -23,6 +23,8 @@ import customerAPI from "../services/customerAPI";
 import { complaintAPI } from "../services/completeAPI";
 import ReviewModal from "../components/ReviewModal";
 import ComplaintModal from "../components/ComplaintModal";
+import BookingNotificationBanner from "../components/BookingNotificationBanner";
+import toast from 'react-hot-toast';
 
 const currency = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
@@ -48,6 +50,13 @@ const Bookings = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUserBookings();
+      
+      // Poll for booking updates every 30 seconds
+      const pollInterval = setInterval(() => {
+        fetchUserBookings();
+      }, 30000); // 30 seconds
+      
+      return () => clearInterval(pollInterval);
     }
   }, [isAuthenticated]);
 
@@ -58,10 +67,13 @@ const Bookings = () => {
         id: booking.id,
         hotelId: booking.hotelId,
         hotel: booking.hotelName,
+        hotelName: booking.hotelName,
         city: booking.hotelCity,
         roomType: booking.roomTypeName,
         checkIn: booking.checkInDate,
+        checkInDate: booking.checkInDate,
         checkOut: booking.checkOutDate,
+        checkOutDate: booking.checkOutDate,
         guests: booking.adults + booking.children,
         rooms: booking.rooms,
         price: booking.totalPrice,
@@ -71,6 +83,26 @@ const Bookings = () => {
         image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60",
         reviewed: false
       }));
+      
+      // Check for newly cancelled bookings and show toast
+      const previousBookings = bookings;
+      const newlyCancelled = backendBookings.filter(booking => {
+        const wasActive = previousBookings.find(prev => 
+          prev.id === booking.id && prev.status !== 'cancelled'
+        );
+        return booking.status === 'cancelled' && wasActive;
+      });
+      
+      // Show toast for newly cancelled bookings
+      if (newlyCancelled.length > 0) {
+        newlyCancelled.forEach(booking => {
+          toast.error(
+            `Booking cancelled: ${booking.hotelName} (${booking.bookingReference})`,
+            { duration: 6000 }
+          );
+        });
+      }
+      
       setBookings(backendBookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -541,6 +573,9 @@ const Bookings = () => {
           onSuccess={handleComplaintSuccess}
         />
       )}
+      
+      {/* Booking Cancellation Notification Banner */}
+      <BookingNotificationBanner bookings={bookings} />
     </AccountLayout>
   );
 };

@@ -17,4 +17,9 @@ public class ComplaintResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
     private String resolution;
+    private String bookingReference;
+
+    public void setBookingReference(String bookingReference) {
+        this.bookingReference = bookingReference;
+    }
 }

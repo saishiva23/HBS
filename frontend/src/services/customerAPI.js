@@ -195,17 +195,20 @@ export const cartPage = {
       throw new Error('Please select valid check-in and check-out dates for all items');
     }
 
-    const bookingPromises = validItems.map(item =>
-      bookings.create({
-        hotelId: item.hotelId || 1,
-        roomTypeId: item.roomTypeId || 1,
+    const bookingPromises = validItems.map(item => {
+      if (!item.hotelId || !item.roomTypeId) {
+        throw new Error(`Invalid cart item: Missing hotel or room type ID for ${item.hotel}`);
+      }
+      return bookings.create({
+        hotelId: item.hotelId,
+        roomTypeId: item.roomTypeId,
         checkInDate: item.checkIn,
         checkOutDate: item.checkOut,
         adults: item.guests || 2,
         children: 0,
         rooms: item.rooms || 1,
-      })
-    );
+      });
+    });
     return Promise.all(bookingPromises);
   },
 };

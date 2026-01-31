@@ -6,7 +6,7 @@ import { FaHeart, FaRegHeart } from "react-icons/fa";
 import toast from "react-hot-toast";
 import SearchBar from "../components/SearchBar";
 import { addToRecentlyViewed } from "../components/RecentlyViewedHotels";
-import { calculateNights, currency, getCappedPrice } from "../utils/bookingUtils";
+import { calculateNights, currency } from "../utils/bookingUtils";
 import customerAPI from "../services/customerAPI";
 
 const SortChip = ({ children, active, onClick }) => (
@@ -101,7 +101,7 @@ const ResultCard = ({ item, onAddToCart, nights = 1, rooms = 1 }) => {
               className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
             >
               <ShoppingCartIcon className="h-4 w-4" />
-              Add to Cart
+              View Rooms
             </button>
           </div>
         </div>
@@ -239,33 +239,11 @@ const SearchResults = () => {
     }
 
     addToRecentlyViewed(hotel.id);
-
-    const nights = calculateNights(initialValues.start, initialValues.end);
-    const roomsCount = parseInt(initialValues.rooms || "1");
-
-    const basePrice = getCappedPrice(hotel.name, hotel.price);
-
-    const bookingDetails = {
-      hotel: hotel.name,
-      hotelId: hotel.id,
-      roomType: hotel.roomType,
-      roomTypeId: hotel.roomTypeId || 1, // Default to 1 if not present in mock data
-      basePrice: basePrice,
-      price: basePrice * roomsCount * nights,
-      checkIn: initialValues.start || "Not selected",
-      checkOut: initialValues.end || "Not selected",
-      guests: initialValues.adults || "2",
-      rooms: roomsCount,
-      nights: nights,
-      image: hotel.image
-    };
-
-    const existingCart = JSON.parse(localStorage.getItem("hotelCart") || "[]");
-    existingCart.push(bookingDetails);
-    localStorage.setItem("hotelCart", JSON.stringify(existingCart));
-
-    window.dispatchEvent(new Event("cartUpdated"));
-    toast.success(`${hotel.name} added to cart!`);
+    
+    // Navigate to hotel details to select a specific room type
+    // Search results don't have room type information needed for booking
+    toast.success(`Viewing ${hotel.name} - Select a room to book`);
+    navigate(`/hotel/${hotel.id}`);
   };
 
   return (

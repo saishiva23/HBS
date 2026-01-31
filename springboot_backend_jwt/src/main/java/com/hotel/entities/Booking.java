@@ -50,6 +50,16 @@ public class Booking extends BaseEntity {
 
     @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
+    
+    // Frozen pricing fields - preserve checkout prices
+    @Column(name = "price_per_night", nullable = false)
+    private BigDecimal pricePerNight;
+    
+    @Column(name = "nights")
+    private Integer nights;
+    
+    @Column(name = "base_amount")
+    private BigDecimal baseAmount; // pricePerNight * nights * rooms
 
     @Column(nullable = false)
     private String status; // confirmed, cancelled, completed

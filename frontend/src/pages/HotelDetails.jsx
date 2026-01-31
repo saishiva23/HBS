@@ -11,6 +11,7 @@ const HotelDetails = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const [hotel, setHotel] = useState(null);
+    const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
     const [selectedImage, setSelectedImage] = useState(0);
@@ -23,6 +24,7 @@ const HotelDetails = () => {
     const fetchHotelDetails = async () => {
         try {
             const data = await customerAPI.hotels.getById(id);
+            const roomsData = await customerAPI.hotels.getRooms(id);
 
             // Parse images
             let images = [];
@@ -41,6 +43,11 @@ const HotelDetails = () => {
             if (data.pool) amenities.push({ icon: FaSwimmingPool, name: 'Pool' });
 
             setHotel({ ...data, images, amenities });
+            setRooms(roomsData.map(rt => ({
+                ...rt,
+                amenities: typeof rt.amenities === 'string' ? JSON.parse(rt.amenities) : (rt.amenities || []),
+                images: typeof rt.images === 'string' ? JSON.parse(rt.images) : (rt.images || []),
+            })));
             setLoading(false);
         } catch (error) {
             console.error('Error fetching hotel:', error);
@@ -62,7 +69,7 @@ const HotelDetails = () => {
             city: hotel.city,
             state: hotel.state,
             image: hotel.images[0],
-            price: parseInt(hotel.priceRange?.match(/(\d+)/)?.[0] || 5000),
+            price: rooms.length > 0 ? rooms[0].pricePerNight : 5000,
             ratingScore: hotel.rating
         };
 
@@ -79,13 +86,48 @@ const HotelDetails = () => {
         setIsFavorite(!isFavorite);
     };
 
+    const handleAddToCart = (roomType) => {
+        if (!isAuthenticated) {
+            toast.error('Please login to book');
+            navigate('/login');
+            return;
+        }
+
+        const bookingDetails = {
+            hotel: hotel.name,
+            hotelId: hotel.id,
+            roomType: roomType.name,
+            roomTypeId: roomType.id,
+            basePrice: roomType.pricePerNight,
+            price: roomType.pricePerNight, // Initial price for 1 night 1 room
+            checkIn: 'Not selected',
+            checkOut: 'Not selected',
+            guests: roomType.capacity || 2,
+            rooms: 1,
+            nights: 1,
+            image: hotel.images[0]
+        };
+
+        const existingCart = JSON.parse(localStorage.getItem('hotelCart') || '[]');
+        existingCart.push(bookingDetails);
+        localStorage.setItem('hotelCart', JSON.stringify(existingCart));
+
+        window.dispatchEvent(new Event('cartUpdated'));
+        toast.success(`${roomType.name} added to cart!`);
+        navigate('/cart');
+    };
+
     const handleBookNow = () => {
         if (!isAuthenticated) {
             toast.error('Please login to book');
             navigate('/login');
             return;
         }
-        navigate(`/search?destination=${hotel.city}&hotelId=${hotel.id}`);
+        // Scroll to rooms section
+        const element = document.getElementById('rooms-section');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     if (loading) {
@@ -201,6 +243,72 @@ const HotelDetails = () => {
                                 ))}
                             </div>
                         </div>
+
+                        {/* Rooms Availability */}
+                        <div id="rooms-section" className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg scroll-mt-24">
+                            <h2 className="text-2xl font-bold dark:text-white mb-6">Rooms & Availability</h2>
+                            <div className="space-y-6">
+                                {rooms.length > 0 ? (
+                                    rooms.map((room) => (
+                                        <div key={room.id} className="border dark:border-gray-700 rounded-xl overflow-hidden hover:border-blue-500 transition-colors">
+                                            <div className="flex flex-col md:flex-row">
+                                                <div className="md:w-1/3 h-48 md:h-auto overflow-hidden">
+                                                    <img 
+                                                        src={room.images[0] || 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800'} 
+                                                        alt={room.name} 
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="md:w-2/3 p-6 flex flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <h3 className="text-xl font-bold dark:text-white">{room.name}</h3>
+                                                            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                                                ₹{room.pricePerNight.toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{room.description}</p>
+                                                        
+                                                        <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                                            <div className="flex items-center gap-1">
+                                                                <FaStar className="text-yellow-400" />
+                                                                <span>Sleeps {room.capacity}</span>
+                                                            </div>
+                                                            {room.beds && (
+                                                                <div className="flex items-center gap-1">
+                                                                    <FaWifi className="text-blue-400" />
+                                                                    <span>{room.beds}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {room.amenities.map((amenity, i) => (
+                                                                <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
+                                                                    {amenity}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-6 flex justify-end">
+                                                        <button 
+                                                            onClick={() => handleAddToCart(room)}
+                                                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg"
+                                                        >
+                                                            Select Room
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                                        <p className="text-gray-500 dark:text-gray-400">No rooms currently available for this hotel.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Column - Booking Card */}
@@ -208,7 +316,9 @@ const HotelDetails = () => {
                         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg sticky top-24">
                             <div className="mb-6">
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Starting from</p>
-                                <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">{hotel.priceRange || '₹5,000'}</p>
+                                <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                                    ₹{rooms.length > 0 ? Math.min(...rooms.map(r => r.pricePerNight)).toLocaleString() : '5,000'}
+                                </p>
                                 <p className="text-sm text-gray-500 dark:text-gray-500">per night</p>
                             </div>
 

@@ -11,7 +11,7 @@ import com.hotel.entities.RecentlyViewed;
 
 public interface RecentlyViewedRepository extends JpaRepository<RecentlyViewed, Long> {
     
-    @Query("SELECT rv FROM RecentlyViewed rv WHERE rv.user.id = :userId ORDER BY rv.viewedAt DESC")
+    @Query("SELECT rv FROM RecentlyViewed rv JOIN FETCH rv.hotel h LEFT JOIN FETCH h.owner WHERE rv.user.id = :userId ORDER BY rv.viewedAt DESC")
     List<RecentlyViewed> findByUserIdOrderByViewedAtDesc(@Param("userId") Long userId);
     
     Optional<RecentlyViewed> findByUserIdAndHotelId(Long userId, Long hotelId);
