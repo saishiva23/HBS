@@ -117,6 +117,10 @@ const SearchResults = () => {
 
   // State for sorting only
   const [sortBy, setSortBy] = useState("Recommended");
+  const [favorites, setFavorites] = useState(() => {
+    const stored = localStorage.getItem('favorites');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   const initialValues = useMemo(() => ({
     destination: searchParams.get("destination") || "",
@@ -157,8 +161,21 @@ const SearchResults = () => {
         const mappedResults = results.map(hotel => {
           let parsedImages = [];
           try {
-            parsedImages = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-          } catch (e) { parsedImages = [hotel.images] } // Fallback
+            if (hotel.images) {
+              parsedImages = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
+              // Ensure it's an array and not null
+              if (!Array.isArray(parsedImages)) {
+                parsedImages = [parsedImages];
+              }
+            }
+          } catch (e) {
+            parsedImages = hotel.images ? [hotel.images] : [];
+          }
+
+          // Ensure parsedImages is always an array
+          if (!parsedImages || !Array.isArray(parsedImages) || parsedImages.length === 0) {
+            parsedImages = ['https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60'];
+          }
 
           const parsedAmenities = [];
           if (hotel.wifi) parsedAmenities.push("WiFi");
@@ -216,6 +233,13 @@ const SearchResults = () => {
   }, [initialValues.destination, sortBy]); // Re-run when destination or sort changes
 
   const toggleFavorite = (hotel) => {
+    // Check authentication before allowing favorites
+    if (!isAuthenticated) {
+      toast.error('Please login to add favorites');
+      navigate('/login');
+      return;
+    }
+
     const isFavorited = favorites.some(f => f.id === hotel.id);
 
     let updatedFavorites;
@@ -239,7 +263,7 @@ const SearchResults = () => {
     }
 
     addToRecentlyViewed(hotel.id);
-    
+
     // Navigate to hotel details to select a specific room type
     // Search results don't have room type information needed for booking
     toast.success(`Viewing ${hotel.name} - Select a room to book`);
