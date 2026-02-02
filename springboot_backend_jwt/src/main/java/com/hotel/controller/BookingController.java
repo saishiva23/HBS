@@ -29,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final com.hotel.service.InvoiceService invoiceService;
+    private final com.hotel.repository.BookingRepository bookingRepository;
 
     @PostMapping
     public ResponseEntity<BookingResponseDTO> createBooking(@RequestBody @Valid BookingDTO bookingDTO,
@@ -56,5 +58,20 @@ public class BookingController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> cancelBooking(@PathVariable Long id, Principal principal) {
         return ResponseEntity.ok(bookingService.cancelBooking(id, principal.getName()));
+    }
+
+    @PostMapping("/{id}/resend-invoice")
+    public ResponseEntity<?> resendInvoice(@PathVariable Long id, Principal principal) {
+        com.hotel.entities.Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new com.hotel.custom_exceptions.ResourceNotFoundException(
+                        "Booking not found with ID: " + id));
+
+        // Verify user owns this booking
+        if (!booking.getUser().getEmail().equals(principal.getName())) {
+            return ResponseEntity.status(403).body("Not authorized to access this booking");
+        }
+
+        invoiceService.generateAndSendInvoice(booking);
+        return ResponseEntity.ok(new com.hotel.dtos.ApiResponse("Success", "Invoice sent to your email"));
     }
 }

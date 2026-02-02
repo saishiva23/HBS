@@ -36,6 +36,8 @@ public class BookingServiceImpl implements BookingService {
     private final HotelRepository hotelRepository;
     private final RoomTypeRepository roomTypeRepository;
     private final RoomOccupancyService roomOccupancyService;
+    private final com.hotel.repository.RoomOccupancyRepository roomOccupancyRepository;
+    private final InvoiceService invoiceService;
 
     @Override
     public BookingResponseDTO createBooking(BookingDTO bookingDTO, String userEmail) {
@@ -76,7 +78,8 @@ public class BookingServiceImpl implements BookingService {
                 throw new IllegalStateException("Selected room type is not available for the chosen dates");
             }
 
-            // 6. Calculate Pricing (Security: Always calculate from DB to prevent manipulation)
+            // 6. Calculate Pricing (Security: Always calculate from DB to prevent
+            // manipulation)
             long nights = ChronoUnit.DAYS.between(bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate());
             BigDecimal frozenPricePerNight = roomType.getPricePerNight();
 
@@ -104,8 +107,9 @@ public class BookingServiceImpl implements BookingService {
             booking.setBookingReference("HB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
             booking.setBookingDate(LocalDate.now());
 
-            // Set payment details - default to PENDING
-            booking.setPaymentStatus("PENDING");
+            // Set payment details - status is COMPLETED since payment happens at booking
+            // time
+            booking.setPaymentStatus("COMPLETED");
             booking.setPaymentMethod(
                     bookingDTO.getPaymentMethod() != null ? bookingDTO.getPaymentMethod() : "CREDIT_CARD");
             booking.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
@@ -120,11 +124,18 @@ public class BookingServiceImpl implements BookingService {
 
             // 8. Save booking and create occupancy
             Booking savedBooking = bookingRepository.save(booking);
-            
+
             roomOccupancyService.createRoomOccupancy(savedBooking);
-            
+
             log.info("Booking created successfully with ID: {} and reference: {}", savedBooking.getId(),
                     savedBooking.getBookingReference());
+
+            // 9. Generate and send invoice via email
+            try {
+                invoiceService.generateAndSendInvoice(savedBooking);
+            } catch (Exception e) {
+                log.error("Failed to send invoice email, but booking was successful", e);
+            }
 
             return mapToBookingResponseDTO(savedBooking);
         } catch (Exception e) {
@@ -238,6 +249,9 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus("CANCELLED");
             bookingRepository.save(booking);
 
+            // Free the rooms by cancelling occupancy
+            roomOccupancyService.cancelRoomOccupancy(bookingId);
+
             log.info("Booking cancelled successfully: {}", booking.getBookingReference());
             return new ApiResponse("Success", "Booking cancelled successfully");
         } catch (Exception e) {
@@ -269,6 +283,17 @@ public class BookingServiceImpl implements BookingService {
         dto.setPaymentStatus(booking.getPaymentStatus());
         dto.setPaymentMethod(booking.getPaymentMethod());
         dto.setTransactionId(booking.getTransactionId());
+
+        // Get assigned room numbers from RoomOccupancy
+        List<String> roomNumbers = roomOccupancyRepository
+                .findByBookingId(booking.getId())
+                .stream()
+                .filter(ro -> "ACTIVE".equals(ro.getStatus()) || "COMPLETED".equals(ro.getStatus()))
+                .map(ro -> ro.getRoom().getRoomNumber())
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+        dto.setAssignedRoomNumbers(roomNumbers);
+
         return dto;
     }
 }

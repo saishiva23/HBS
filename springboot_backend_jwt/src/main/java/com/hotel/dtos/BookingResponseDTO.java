@@ -40,4 +40,7 @@ public class BookingResponseDTO {
     // Registered User details
     private String userEmail;
     private String userName;
+
+    // Assigned room numbers for guest visibility
+    private java.util.List<String> assignedRoomNumbers;
 }
