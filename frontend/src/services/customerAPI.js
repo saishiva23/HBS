@@ -144,6 +144,21 @@ export const recentlyViewed = {
     api.get('/recently-viewed'),
 };
 
+// 8. AVAILABILITY
+export const availability = {
+  // Check room availability for specific dates
+  checkRoomAvailability: (hotelId, roomTypeId, checkIn, checkOut, rooms = 1) =>
+    api.get(`/availability/hotel/${hotelId}/room-type/${roomTypeId}`, {
+      params: { checkIn, checkOut, rooms }
+    }),
+
+  // Check availability for multiple dates (for calendar visualization)
+  checkBatchAvailability: (hotelId, roomTypeId, startDate, endDate, rooms = 1) =>
+    api.get(`/availability/hotel/${hotelId}/room-type/${roomTypeId}/batch`, {
+      params: { startDate, endDate, rooms }
+    }),
+};
+
 // ============ FRONTEND PAGE INTEGRATIONS ============
 
 // HOME PAGE APIs
@@ -266,7 +281,9 @@ export default {
   bookings,
   invoice,
   reviews,
+  complaints,
   recentlyViewed,
+  availability,
   homePage,
   searchPage,
   hotelDetailsPage,
