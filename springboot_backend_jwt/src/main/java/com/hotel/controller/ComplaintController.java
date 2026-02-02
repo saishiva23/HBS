@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hotel.dtos.ApiResponse;
 import com.hotel.dtos.ComplaintDTO;
+import com.hotel.dtos.ComplaintResponseDTO;
 import com.hotel.entities.Complaint;
 import com.hotel.service.ComplaintService;
 
@@ -32,13 +33,33 @@ public class ComplaintController {
     private final ComplaintService complaintService;
 
     @PostMapping
-    public ResponseEntity<Complaint> raiseComplaint(@RequestBody @jakarta.validation.Valid ComplaintDTO dto,
+    public ResponseEntity<ComplaintResponseDTO> raiseComplaint(@RequestBody @jakarta.validation.Valid ComplaintDTO dto,
             Principal principal) {
-        return ResponseEntity.ok(complaintService.raiseComplaint(dto, principal.getName()));
+        Complaint complaint = complaintService.raiseComplaint(dto, principal.getName());
+        return ResponseEntity.ok(convertToResponseDTO(complaint));
+    }
+
+    private ComplaintResponseDTO convertToResponseDTO(Complaint complaint) {
+        ComplaintResponseDTO responseDTO = new ComplaintResponseDTO();
+        responseDTO.setId(complaint.getId());
+        responseDTO.setHotelId(complaint.getHotel() != null ? complaint.getHotel().getId() : null);
+        responseDTO.setHotelName(complaint.getHotel() != null ? complaint.getHotel().getName() : null);
+        responseDTO.setBookingId(complaint.getBooking() != null ? complaint.getBooking().getId() : null);
+        responseDTO.setBookingReference(
+                complaint.getBooking() != null ? complaint.getBooking().getBookingReference() : null);
+        responseDTO.setGuestName(complaint.getGuestName());
+        responseDTO.setGuestEmail(complaint.getGuestEmail());
+        responseDTO.setSubject(complaint.getSubject());
+        responseDTO.setDescription(complaint.getDescription());
+        responseDTO.setStatus(complaint.getStatus() != null ? complaint.getStatus().name() : null);
+        responseDTO.setCreatedAt(complaint.getCreatedAt());
+        responseDTO.setResolvedAt(complaint.getResolvedAt());
+        responseDTO.setResolution(complaint.getResolution());
+        return responseDTO;
     }
 
     @GetMapping("/my-complaints")
-    public ResponseEntity<List<Complaint>> getUserComplaints(Principal principal) {
+    public ResponseEntity<List<ComplaintResponseDTO>> getUserComplaints(Principal principal) {
         return ResponseEntity.ok(complaintService.getUserComplaints(principal.getName()));
     }
 
