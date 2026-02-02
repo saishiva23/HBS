@@ -15,5 +15,14 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> {
 
     List<Hotel> findByOwnerId(Long ownerId);
 
+    // Soft delete aware queries - exclude soft deleted by default
+    List<Hotel> findByOwnerIdAndIsDeletedFalse(Long ownerId);
+
+    // Include soft deleted hotels for admin/restore functionality
+    List<Hotel> findByOwnerIdAndIsDeletedTrue(Long ownerId);
+
     List<Hotel> findByCity(String city);
+
+    // For customer searches - exclude deleted hotels
+    List<Hotel> findByCityContainingIgnoreCaseAndStatusAndIsDeletedFalse(String city, String status);
 }
