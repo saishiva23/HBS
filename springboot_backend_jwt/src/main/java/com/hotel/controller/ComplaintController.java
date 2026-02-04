@@ -22,17 +22,24 @@ import com.hotel.entities.Complaint;
 import com.hotel.service.ComplaintService;
 
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/complaints")
 @CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "http://localhost:5174",
         "http://localhost:5175" })
 @RequiredArgsConstructor
+@Tag(name = "Complaints", description = "Customer complaint management endpoints")
 public class ComplaintController {
 
     private final ComplaintService complaintService;
 
     @PostMapping
+    @Operation(summary = "Raise complaint", description = "Submit a complaint regarding a hotel or booking")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Complaint submitted successfully")
     public ResponseEntity<ComplaintResponseDTO> raiseComplaint(@RequestBody @jakarta.validation.Valid ComplaintDTO dto,
             Principal principal) {
         Complaint complaint = complaintService.raiseComplaint(dto, principal.getName());
@@ -59,22 +66,28 @@ public class ComplaintController {
     }
 
     @GetMapping("/my-complaints")
+    @Operation(summary = "Get user complaints", description = "Retrieves all complaints submitted by the authenticated user")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Complaints retrieved successfully")
     public ResponseEntity<List<ComplaintResponseDTO>> getUserComplaints(Principal principal) {
         return ResponseEntity.ok(complaintService.getUserComplaints(principal.getName()));
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @Operation(summary = "Get all complaints (Admin)", description = "Retrieves all complaints in the system. Admin access required.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "All complaints retrieved")
     public ResponseEntity<List<Complaint>> getAllComplaints() {
         return ResponseEntity.ok(complaintService.getAllComplaints());
     }
 
     @PatchMapping("/{id}/resolve")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @Operation(summary = "Resolve complaint (Admin)", description = "Updates the status of a complaint and optionally adds a resolution comment")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Complaint resolved successfully")
     public ResponseEntity<ApiResponse> resolveComplaint(
-            @PathVariable Long id,
-            @RequestParam String status,
-            @RequestParam(required = false) String comment) {
+            @Parameter(description = "Complaint ID") @PathVariable Long id,
+            @Parameter(description = "New status") @RequestParam String status,
+            @Parameter(description = "Resolution comment") @RequestParam(required = false) String comment) {
         return ResponseEntity.ok(complaintService.resolveComplaint(id, status, comment));
     }
 }

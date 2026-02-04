@@ -24,6 +24,10 @@ import com.hotel.service.AdminService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -32,17 +36,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 @Slf4j
+@Tag(name = "Admin", description = "Administrative endpoints for system management (Admin access required)")
 public class AdminController {
 
     private final AdminService adminService;
 
     // Hotel Approval Management
     @GetMapping("/hotels")
+    @Operation(summary = "Get all hotels", description = "Retrieves all hotels in the system regardless of status")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Hotels retrieved successfully")
     public ResponseEntity<List<Hotel>> getAllHotels() {
         return ResponseEntity.ok(adminService.getAllHotels());
     }
 
     @GetMapping("/hotels/pending")
+    @Operation(summary = "Get pending hotels", description = "Retrieves all hotels awaiting admin approval")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Pending hotels retrieved successfully")
     public ResponseEntity<List<Hotel>> getPendingHotels() {
         log.info("Getting pending hotels");
         return ResponseEntity.ok(adminService.getPendingHotels());

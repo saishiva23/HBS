@@ -28,6 +28,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.modelmapper.ModelMapper;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -41,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
+@Tag(name = "Users", description = "User authentication, registration, and profile management endpoints")
 public class UserController {
 
     private final UserService userService;
@@ -49,7 +56,11 @@ public class UserController {
     private final ModelMapper modelMapper;
 
     @GetMapping
-    @Operation(description = "Get all users")
+    @Operation(summary = "Get all users", description = "Retrieves a list of all registered users in the system. Returns 204 No Content if no users exist.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
+            @ApiResponse(responseCode = "204", description = "No users found")
+    })
     public ResponseEntity<?> getAllUsers() {
         log.info("Getting all users");
         List<UserDTO> users = userService.getAllUsers();
@@ -60,21 +71,36 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    @Operation(description = "Get user by ID")
-    public ResponseEntity<?> getUserById(@PathVariable @Min(1) @Max(100) Long userId) {
+    @Operation(summary = "Get user by ID", description = "Retrieves detailed information about a specific user by their ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<?> getUserById(
+            @Parameter(description = "User ID", example = "1") @PathVariable @Min(1) @Max(100) Long userId) {
         log.info("Getting user details for ID: {}", userId);
         return ResponseEntity.ok(userService.getUserDetails(userId));
     }
 
     @PutMapping("/{id}")
-    @Operation(description = "Update user details")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody @Valid User user) {
+    @Operation(summary = "Update user details", description = "Updates user information for a specific user ID. Requires authentication.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User updated successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<?> updateUser(
+            @Parameter(description = "User ID") @PathVariable Long id,
+            @RequestBody @Valid User user) {
         log.info("Updating user with ID: {}", id);
         return ResponseEntity.ok(userService.updateDetails(id, user));
     }
 
     @PostMapping("/signin")
-    @Operation(description = "User login")
+    @Operation(summary = "User login", description = "Authenticates a user with email and password. Returns JWT token on successful authentication. This token should be used in the Authorization header for protected endpoints.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login successful, JWT token returned"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     public ResponseEntity<?> signIn(@RequestBody @Valid AuthRequest request) {
         log.info("User sign in attempt for email: {}", request.getEmail());
 
@@ -89,7 +115,11 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    @Operation(description = "User registration")
+    @Operation(summary = "User registration", description = "Registers a new user account. Returns authentication response with JWT token.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or email already exists")
+    })
     public ResponseEntity<?> signUp(@RequestBody @Valid UserRegDTO dto) {
         log.info("User registration attempt for email: {}", dto.getEmail());
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -151,7 +181,11 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    @Operation(description = "Get current user profile")
+    @Operation(summary = "Get current user profile", description = "Retrieves the profile information of the currently authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<?> getCurrentUserProfile(Principal principal) {
         log.info("Getting current user profile for: {}", principal.getName());
         try {
@@ -165,7 +199,12 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    @Operation(description = "Update current user profile")
+    @Operation(summary = "Update current user profile", description = "Updates the profile information of the currently authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<?> updateCurrentUserProfile(@RequestBody @Valid User user, Principal principal) {
         log.info("Updating current user profile for: {}", principal.getName());
         try {
@@ -183,10 +222,15 @@ public class UserController {
     }
 
     @PatchMapping("/change-password")
-    @Operation(description = "Change user password")
+    @Operation(summary = "Change user password", description = "Changes the password for the currently authenticated user. Requires current password verification.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Current password is incorrect"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<?> changePassword(
-            @org.springframework.web.bind.annotation.RequestParam String currentPassword,
-            @org.springframework.web.bind.annotation.RequestParam String newPassword,
+            @Parameter(description = "Current password") @org.springframework.web.bind.annotation.RequestParam String currentPassword,
+            @Parameter(description = "New password") @org.springframework.web.bind.annotation.RequestParam String newPassword,
             Principal principal) {
         log.info("Changing password for user: {}", principal.getName());
         try {

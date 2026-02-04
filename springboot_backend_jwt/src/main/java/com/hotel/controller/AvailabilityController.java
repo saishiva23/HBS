@@ -20,12 +20,17 @@ import com.hotel.service.RoomOccupancyService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @RestController
 @RequestMapping("/api/availability")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Availability", description = "Room availability checking and batch availability endpoints")
 public class AvailabilityController {
 
         private final RoomOccupancyService roomOccupancyService;
@@ -33,12 +38,14 @@ public class AvailabilityController {
         private final RoomOccupancyRepository roomOccupancyRepository;
 
         @GetMapping("/hotel/{hotelId}/room-type/{roomTypeId}")
+        @Operation(summary = "Check room availability", description = "Checks room availability for a specific hotel and room type across given dates")
+        @ApiResponse(responseCode = "200", description = "Availability information retrieved")
         public ResponseEntity<AvailabilityDTO> checkAvailability(
-                        @PathVariable Long hotelId,
-                        @PathVariable Long roomTypeId,
-                        @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate checkIn,
-                        @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate checkOut,
-                        @RequestParam(defaultValue = "1") Integer rooms) {
+                        @Parameter(description = "Hotel ID") @PathVariable Long hotelId,
+                        @Parameter(description = "Room Type ID") @PathVariable Long roomTypeId,
+                        @Parameter(description = "Check-in date", example = "2024-12-01") @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate checkIn,
+                        @Parameter(description = "Check-out date", example = "2024-12-05") @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate checkOut,
+                        @Parameter(description = "Number of rooms", example = "1") @RequestParam(defaultValue = "1") Integer rooms) {
 
                 log.info("Checking availability for hotel {} room type {} from {} to {} for {} rooms",
                                 hotelId, roomTypeId, checkIn, checkOut, rooms);
@@ -72,12 +79,14 @@ public class AvailabilityController {
         }
 
         @GetMapping("/hotel/{hotelId}/room-type/{roomTypeId}/batch")
+        @Operation(summary = "Check batch availability", description = "Checks availability for each day in a date range, useful for calendar displays")
+        @ApiResponse(responseCode = "200", description = "Batch availability data retrieved")
         public ResponseEntity<Map<String, Boolean>> checkBatchAvailability(
-                        @PathVariable Long hotelId,
-                        @PathVariable Long roomTypeId,
-                        @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate startDate,
-                        @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate endDate,
-                        @RequestParam(defaultValue = "1") Integer rooms) {
+                        @Parameter(description = "Hotel ID") @PathVariable Long hotelId,
+                        @Parameter(description = "Room Type ID") @PathVariable Long roomTypeId,
+                        @Parameter(description = "Start date", example = "2024-12-01") @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate startDate,
+                        @Parameter(description = "End date", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate endDate,
+                        @Parameter(description = "Number of rooms", example = "1") @RequestParam(defaultValue = "1") Integer rooms) {
 
                 log.info("Checking batch availability for hotel {} room type {} from {} to {}",
                                 hotelId, roomTypeId, startDate, endDate);
