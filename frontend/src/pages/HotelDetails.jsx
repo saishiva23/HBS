@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaHeart, FaRegHeart, FaMapMarkerAlt, FaStar, FaWifi, FaParking, FaDumbbell, FaUtensils, FaSwimmingPool, FaArrowLeft } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaMapMarkerAlt, FaStar, FaWifi, FaParking, FaDumbbell, FaUtensils, FaSwimmingPool, FaArrowLeft, FaUser } from 'react-icons/fa';
 import { ShoppingCartIcon } from '@heroicons/react/24/solid';
 import customerAPI from '../services/customerAPI';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { getDisplayImage, getImageArray } from '../utils/defaultImages';
+import ReviewModal from '../components/ReviewModal';
 
 const HotelDetails = () => {
     const { id } = useParams();
@@ -16,9 +17,12 @@ const HotelDetails = () => {
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
     const [selectedImage, setSelectedImage] = useState(0);
+    const [reviews, setReviews] = useState([]);
+    const [showReviewModal, setShowReviewModal] = useState(false);
 
     useEffect(() => {
         fetchHotelDetails();
+        fetchReviews();
         checkIfFavorite();
     }, [id]);
 
@@ -59,6 +63,16 @@ const HotelDetails = () => {
             console.error('Error fetching hotel:', error);
             toast.error('Failed to load hotel details');
             setLoading(false);
+        }
+    };
+
+    const fetchReviews = async () => {
+        try {
+            const reviewsData = await customerAPI.reviews.getHotelReviews(id);
+            setReviews(reviewsData || []);
+        } catch (error) {
+            console.error('Error fetching reviews:', error);
+            // Don't show error toast for reviews, just log it
         }
     };
 
@@ -147,6 +161,23 @@ const HotelDetails = () => {
         if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
         }
+    };
+
+    const handleReviewSuccess = async () => {
+        // Refresh reviews and hotel data after review submission
+        await fetchReviews();
+        await fetchHotelDetails();
+        toast.success('Thank you for your review!');
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
     };
 
     if (loading) {
@@ -328,6 +359,75 @@ const HotelDetails = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Reviews Section */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold dark:text-white">Guest Reviews</h2>
+                                {isAuthenticated && (
+                                    <button
+                                        onClick={() => setShowReviewModal(true)}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+                                    >
+                                        <FaStar className="h-4 w-4" />
+                                        Write Review
+                                    </button>
+                                )}
+                            </div>
+
+                            {reviews.length > 0 ? (
+                                <div className="space-y-4">
+                                    {reviews.map((review) => (
+                                        <div 
+                                            key={review.id} 
+                                            className="border dark:border-gray-700 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                                        >
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                                                        <FaUser className="h-5 w-5 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold dark:text-white">
+                                                            {review.user?.firstName || 'Guest'} {review.user?.lastName?.[0] || ''}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                            {formatDate(review.createdAt)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg font-bold">
+                                                    <FaStar className="h-4 w-4" />
+                                                    {review.rating}
+                                                </div>
+                                            </div>
+                                            {review.title && (
+                                                <h4 className="font-bold dark:text-white mb-2">{review.title}</h4>
+                                            )}
+                                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                {review.comment}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                                    <FaStar className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                                    <p className="text-gray-500 dark:text-gray-400 mb-2">No reviews yet</p>
+                                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                                        Be the first to review this hotel!
+                                    </p>
+                                    {isAuthenticated && (
+                                        <button
+                                            onClick={() => setShowReviewModal(true)}
+                                            className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                                        >
+                                            Write First Review
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Right Column - Booking Card */}
@@ -366,6 +466,19 @@ const HotelDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Review Modal */}
+            {showReviewModal && (
+                <ReviewModal
+                    booking={{
+                        id: null,
+                        hotelId: hotel.id,
+                        hotelName: hotel.name
+                    }}
+                    onClose={() => setShowReviewModal(false)}
+                    onSuccess={handleReviewSuccess}
+                />
+            )}
         </div>
     );
 };

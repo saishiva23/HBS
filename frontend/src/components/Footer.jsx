@@ -13,21 +13,47 @@ const Footer = () => {
                     </div>
 
                     <div>
-                        <h4 className="font-semibold mb-4">Quick Links</h4>
-                        <ul className="space-y-2">
-                            <li><a href="/hotels" className="text-gray-400 hover:text-white">Hotels</a></li>
-                            <li><a href="/about" className="text-gray-400 hover:text-white">About Us</a></li>
-                            <li><a href="/contact" className="text-gray-400 hover:text-white">Contact</a></li>
-                        </ul>
+                        <h4 className="font-semibold mb-4">Contact Us</h4>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="font-medium text-white">Aadesh Minz</p>
+                                <a href="mailto:aadeshminz31@gmail.com" className="text-gray-400 hover:text-white text-sm">
+                                    aadeshminz31@gmail.com
+                                </a>
+                                <br />
+                                <a
+                                    href="https://www.linkedin.com/in/aadesh-minz-802391218"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 mt-1"
+                                >
+                                    <FaLinkedin className="text-lg" />
+                                    LinkedIn Profile
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
-                        <h4 className="font-semibold mb-4">Support</h4>
-                        <ul className="space-y-2">
-                            <li><a href="/faq" className="text-gray-400 hover:text-white">FAQ</a></li>
-                            <li><a href="/terms" className="text-gray-400 hover:text-white">Terms</a></li>
-                            <li><a href="/privacy" className="text-gray-400 hover:text-white">Privacy Policy</a></li>
-                        </ul>
+                        <h4 className="font-semibold mb-4">&nbsp;</h4>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="font-medium text-white">Sai Shiva Sheelampally</p>
+                                <a href="mailto:saishivasheelampally@gmail.com" className="text-gray-400 hover:text-white text-sm">
+                                    saishivasheelampally@gmail.com
+                                </a>
+                                <br />
+                                <a
+                                    href="http://www.linkedin.com/in/sai-shiva-s-941410227"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 mt-1"
+                                >
+                                    <FaLinkedin className="text-lg" />
+                                    LinkedIn Profile
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
