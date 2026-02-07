@@ -252,6 +252,7 @@ export const ownerRoomManagement = {
   addRoomToList: (hotelId, roomData) => ownerAPI.addRoomToList(hotelId, roomData),
   updateRoomInList: (hotelId, roomId, roomData) => ownerAPI.updateRoomInList(hotelId, roomId, roomData),
   deleteRoomFromList: (hotelId, roomId) => ownerAPI.deleteRoomFromList(hotelId, roomId),
+  getRoomStats: (hotelId) => api.get(`/owner/hotels/${hotelId}/room-stats`),
 };
 
 // HOTEL OWNER - BOOKING MANAGEMENT

@@ -31,8 +31,19 @@ public class BookingDTO {
     @FutureOrPresent(message = "Check-out date must be today or in the future")
     private LocalDate checkOutDate;
 
+    @NotNull(message = "Number of adults is required")
+    @jakarta.validation.constraints.Min(value = 1, message = "At least 1 adult is required")
+    @jakarta.validation.constraints.Max(value = 10, message = "Maximum 10 adults allowed")
     private Integer adults = 1;
+    
+    @NotNull(message = "Number of children is required")
+    @jakarta.validation.constraints.Min(value = 0, message = "Children cannot be negative")
+    @jakarta.validation.constraints.Max(value = 10, message = "Maximum 10 children allowed")
     private Integer children = 0;
+    
+    @NotNull(message = "Number of rooms is required")
+    @jakarta.validation.constraints.Min(value = 1, message = "At least 1 room is required")
+    @jakarta.validation.constraints.Max(value = 10, message = "Maximum 10 rooms allowed")
     private Integer rooms = 1;
     private BigDecimal totalPrice;
     private BigDecimal pricePerNight; // Frozen price from checkout

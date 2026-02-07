@@ -40,6 +40,9 @@ public interface HotelOwnerService {
 
     ApiResponse deleteRoom(Long hotelId, Long roomId, String ownerEmail);
 
+    // Room Statistics
+    com.hotel.dtos.RoomStatsDTO getRoomStats(Long hotelId, String ownerEmail);
+
     // Booking Management
     List<BookingResponseDTO> getOwnerBookings(String ownerEmail);
 

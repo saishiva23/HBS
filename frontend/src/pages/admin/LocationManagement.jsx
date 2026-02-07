@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import { adminLocationManagement } from '../../services/completeAPI';
+import { useToast } from '../../contexts/ToastContext';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -12,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const LocationManagement = () => {
+  const { showToast } = useToast();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,7 +78,7 @@ const LocationManagement = () => {
       setShowModal(false);
     } catch (error) {
       console.error('Failed to save location:', error);
-      alert('Failed to save location');
+      showToast('Failed to save location', 'error');
     }
   };
 
@@ -93,7 +95,7 @@ const LocationManagement = () => {
       setLocationToDelete(null);
     } catch (error) {
       console.error('Failed to delete location:', error);
-      alert('Failed to delete location');
+      showToast('Failed to delete location', 'error');
     }
   };
 

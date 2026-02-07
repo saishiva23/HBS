@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import Favorites from './pages/Favorites';
 import RecentlyViewed from './pages/RecentlyViewed';
 import Bookings from './pages/Bookings';
+import Complaints from './pages/Complaints';
 import Help from './pages/Help';
 import Hoteliers from './pages/Hoteliers';
 import SearchResults from './pages/SearchResults';
@@ -40,12 +41,14 @@ import AdminLogs from './pages/admin/AdminLogs';
 // Context Providers
 import { HotelProvider } from './context/HotelContext';
 import { ReviewsProvider } from './context/ReviewsContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
   return (
-    <HotelProvider>
-      <ReviewsProvider>
-        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <ToastProvider>
+      <HotelProvider>
+        <ReviewsProvider>
+          <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
           <Navbar />
           <main className="flex-grow">
             <Routes>
@@ -56,6 +59,7 @@ function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/recent" element={<RecentlyViewed />} />
               <Route path="/bookings" element={<Bookings />} />
+              <Route path="/complaints" element={<Complaints />} />
               <Route path="/help" element={<Help />} />
               <Route path="/hoteliers" element={<Hoteliers />} />
               <Route path="/search" element={<SearchResults />} />
@@ -89,9 +93,10 @@ function App() {
             </Routes>
           </main>
           <Footer />
-        </div>
-      </ReviewsProvider>
-    </HotelProvider>
+          </div>
+        </ReviewsProvider>
+      </HotelProvider>
+    </ToastProvider>
   );
 }
 

@@ -8,8 +8,10 @@ import {
     FaFileInvoiceDollar,
 } from 'react-icons/fa';
 import OwnerLayout from '../../layouts/OwnerLayout';
+import { useToast } from '../../contexts/ToastContext';
 
 const RevenueReports = () => {
+    const { showToast } = useToast();
     const [timeFrame, setTimeFrame] = useState('monthly');
     const [selectedYear, setSelectedYear] = useState(2026);
 
@@ -81,7 +83,7 @@ const RevenueReports = () => {
 
     const exportReport = () => {
         console.log('Exporting report...');
-        alert('Report exported successfully!');
+        showToast('Report exported successfully!', 'success');
     };
 
     return (

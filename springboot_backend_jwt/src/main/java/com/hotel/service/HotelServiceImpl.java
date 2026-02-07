@@ -39,6 +39,7 @@ public class HotelServiceImpl implements HotelService {
     private final PasswordEncoder passwordEncoder;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private final com.hotel.security.JwtUtils jwtUtils;
+    private final com.hotel.repository.LocationRepository locationRepository;
 
     @Override
     public List<Hotel> getAllHotels() {
@@ -75,10 +76,26 @@ public class HotelServiceImpl implements HotelService {
         try {
             log.info("Searching hotels with city: {}, state: {}, destination: {}", city, state, destination);
 
-            if (city != null && !city.trim().isEmpty()) {
-                return hotelRepository.findByCityContainingIgnoreCaseAndStatus(city, "APPROVED");
+            // Priority 1: Use destination for combined search (name, city, state - case
+            // insensitive)
+            if (destination != null && !destination.trim().isEmpty()) {
+                log.info("Searching by destination (name/city/state): {}", destination);
+                return hotelRepository.searchByNameCityOrState(destination.trim(), "APPROVED");
             }
 
+            // Priority 2: Search by city (case insensitive)
+            if (city != null && !city.trim().isEmpty()) {
+                log.info("Searching by city: {}", city);
+                return hotelRepository.searchByNameCityOrState(city.trim(), "APPROVED");
+            }
+
+            // Priority 3: Search by state (case insensitive)
+            if (state != null && !state.trim().isEmpty()) {
+                log.info("Searching by state: {}", state);
+                return hotelRepository.searchByNameCityOrState(state.trim(), "APPROVED");
+            }
+
+            // Default: return all approved hotels
             return hotelRepository.findByStatus("APPROVED");
         } catch (Exception e) {
             log.error("Error searching hotels", e);
@@ -191,6 +208,9 @@ public class HotelServiceImpl implements HotelService {
             // 4. Save
             Hotel savedHotel = hotelRepository.save(hotel);
             log.info("Hotel saved with ID: {}", savedHotel.getId());
+
+            // 5. Auto-create location if it doesn't exist
+            createLocationIfNotExists(savedHotel.getCity(), savedHotel.getState());
 
             return savedHotel;
         } catch (Exception e) {
@@ -311,12 +331,16 @@ public class HotelServiceImpl implements HotelService {
         }
 
         com.hotel.entities.User user = modelMapper.map(userDTO, com.hotel.entities.User.class);
+
+        // Explicitly set email to prevent ModelMapper corruption
+        user.setEmail(userDTO.getEmail());
+
         user.setUserRole(UserRole.ROLE_HOTEL_MANAGER); // Explicitly set as Manager
         user.setAccountStatus(AccountStatus.ACTIVE);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
         com.hotel.entities.User savedUser = userRepository.save(user);
-        log.info("User created with ID: {}", savedUser.getId());
+        log.info("User created with ID: {} with email: {}", savedUser.getId(), savedUser.getEmail());
 
         // 2. Create Hotel
         HotelDTO hotelDTO = registrationDTO.getHotel();
@@ -345,6 +369,9 @@ public class HotelServiceImpl implements HotelService {
         Hotel savedHotel = hotelRepository.save(hotel);
         log.info("Hotel registered with ID: {}", savedHotel.getId());
 
+        // Auto-create location
+        createLocationIfNotExists(savedHotel.getCity(), savedHotel.getState());
+
         return savedHotel;
     }
 
@@ -362,12 +389,16 @@ public class HotelServiceImpl implements HotelService {
         }
 
         com.hotel.entities.User user = modelMapper.map(userDTO, com.hotel.entities.User.class);
+
+        // Explicitly set email to prevent ModelMapper corruption
+        user.setEmail(userDTO.getEmail());
+
         user.setUserRole(UserRole.ROLE_HOTEL_MANAGER); // Explicitly set as Manager
         user.setAccountStatus(AccountStatus.ACTIVE);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
         com.hotel.entities.User savedUser = userRepository.save(user);
-        log.info("User created with ID: {}", savedUser.getId());
+        log.info("User created with ID: {} with email: {}", savedUser.getId(), savedUser.getEmail());
 
         // 2. Create Hotel
         HotelDTO hotelDTO = registrationDTO.getHotel();
@@ -421,6 +452,9 @@ public class HotelServiceImpl implements HotelService {
         Hotel savedHotel = hotelRepository.save(hotel);
         log.info("Hotel registered with ID: {}", savedHotel.getId());
 
+        // Auto-create location
+        createLocationIfNotExists(savedHotel.getCity(), savedHotel.getState());
+
         // 3. Generate JWT Token for auto-login
         String token = jwtUtils.generateToken(
                 savedUser.getEmail(),
@@ -437,6 +471,25 @@ public class HotelServiceImpl implements HotelService {
 
         log.info("Authentication response created for user: {}", savedUser.getEmail());
         return authResp;
+    }
+
+    private void createLocationIfNotExists(String city, String state) {
+        try {
+            if (city == null || city.trim().isEmpty())
+                return;
+            boolean exists = locationRepository.findByCity(city.trim()).isPresent();
+            if (!exists) {
+                com.hotel.entities.Location location = new com.hotel.entities.Location();
+                location.setCity(city.trim());
+                location.setState(state != null ? state.trim() : "");
+                location.setCountry("India");
+                location.setAddedDate(java.time.LocalDate.now());
+                locationRepository.save(location);
+                log.info("Auto-created location: {}", city);
+            }
+        } catch (Exception e) {
+            log.error("Failed to auto-create location: {}", city, e);
+        }
     }
 
 }

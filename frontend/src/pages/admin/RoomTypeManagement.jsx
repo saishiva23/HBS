@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import OwnerLayout from '../../layouts/OwnerLayout';
 import { useHotel } from '../../context/HotelContext';
 import { ownerRoomManagement } from '../../services/completeAPI';
+import { useToast } from '../../contexts/ToastContext';
 import {
   PlusIcon,
   PencilIcon,
@@ -15,6 +16,7 @@ import { FaBed, FaSnowflake, FaFan } from 'react-icons/fa';
 
 const RoomTypeManagement = () => {
   const { selectedHotel } = useHotel();
+  const { showToast } = useToast();
   const [roomTypes, setRoomTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,8 +52,39 @@ const RoomTypeManagement = () => {
     capacity: 2,
     totalRooms: 0,
     amenities: ['WiFi', 'TV', 'Room Service'],
-    description: ''
+    description: '',
+    images: []
   });
+
+  const [imageInput, setImageInput] = useState('');
+
+  const handleAddImage = () => {
+    if (imageInput.trim()) {
+      // Convert Google Drive link to direct image URL if needed
+      let imageUrl = imageInput.trim();
+      
+      // Handle Google Drive share links
+      if (imageUrl.includes('drive.google.com')) {
+        const fileIdMatch = imageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch) {
+          imageUrl = `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, imageUrl]
+      }));
+      setImageInput('');
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
 
   const bedOptions = ['1 King Bed', '2 Single Beds', '4 Beds'];
   const amenityOptions = ['WiFi', 'TV', 'Room Service'];
@@ -65,13 +98,19 @@ const RoomTypeManagement = () => {
       totalRooms: 0,
       pricePerNight: '',
       amenities: ['WiFi', 'TV', 'Room Service'],
-      description: ''
+      description: '',
+      images: []
     });
+    setImageInput('');
     setShowModal(true);
   };
 
   const openEditModal = (room) => {
     setEditingRoom(room);
+    const parsedImages = typeof room.images === 'string' ? 
+      (room.images ? JSON.parse(room.images) : []) : 
+      (room.images || []);
+    
     setFormData({
       name: room.name,
       beds: '2 Single Beds',
@@ -79,8 +118,10 @@ const RoomTypeManagement = () => {
       pricePerNight: room.pricePerNight,
       totalRooms: room.totalRooms || 0,
       amenities: room.amenities,
-      description: room.description
+      description: room.description,
+      images: parsedImages
     });
+    setImageInput('');
     setShowModal(true);
   };
 
@@ -95,7 +136,7 @@ const RoomTypeManagement = () => {
         capacity: parseInt(formData.capacity),
         pricePerNight: parseFloat(formData.pricePerNight),
         amenities: formData.amenities,
-        images: [],
+        images: formData.images,
       };
 
       if (editingRoom) {
@@ -107,7 +148,7 @@ const RoomTypeManagement = () => {
       setShowModal(false);
     } catch (error) {
       console.error("Failed to save room type", error);
-      alert("Failed to save: " + error.message);
+      showToast("Failed to save: " + error.message, 'error');
     }
   };
 
@@ -125,7 +166,7 @@ const RoomTypeManagement = () => {
       setRoomToDelete(null);
     } catch (error) {
       console.error("Failed to delete room type", error);
-      alert("Failed to delete: " + error.message);
+      showToast("Failed to delete: " + error.message, 'error');
     }
   };
 
@@ -345,6 +386,60 @@ const RoomTypeManagement = () => {
                       {amenity}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Image URLs Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Room Images (Google Drive Links)
+                </label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={imageInput}
+                      onChange={(e) => setImageInput(e.target.value)}
+                      placeholder="Paste Google Drive share link or image URL"
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddImage}
+                      className="px-4 py-2 bg-yellow-400 text-gray-900 rounded-lg font-medium hover:bg-yellow-500 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Tip: Share your image on Google Drive, copy the link, and paste it here
+                  </p>
+                  
+                  {/* Image Preview List */}
+                  {formData.images.length > 0 && (
+                    <div className="space-y-2 mt-3">
+                      {formData.images.map((img, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <img 
+                            src={img} 
+                            alt={`Room ${index + 1}`} 
+                            className="w-16 h-16 object-cover rounded"
+                            onError={(e) => e.target.src = 'https://via.placeholder.com/64?text=Image'}
+                          />
+                          <span className="flex-1 text-sm text-gray-600 dark:text-gray-300 truncate">
+                            {img}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                          >
+                            <XMarkIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

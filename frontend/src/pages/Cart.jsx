@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  TrashIcon, 
-  ShoppingCartIcon, 
+import {
+  TrashIcon,
+  ShoppingCartIcon,
   PencilIcon,
   MinusIcon,
   PlusIcon,
@@ -14,10 +14,12 @@ import {
 import { calculateNights, currency } from "../utils/bookingUtils";
 import customerAPI from "../services/customerAPI";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
   const [cartItems, setCartItems] = useState(() => {
     return JSON.parse(localStorage.getItem("hotelCart") || "[]");
   });
@@ -27,19 +29,19 @@ const Cart = () => {
   // Proceed to checkout - Create actual booking
   const handleCheckout = async () => {
     if (cartItems.length === 0 || !isAuthenticated) {
-      alert('Please login to proceed with booking.');
+      showToast('Please login to proceed with booking.', 'warning');
       navigate('/login');
       return;
     }
-    
+
     try {
       await customerAPI.cartPage.checkout(cartItems);
       clearCart();
-      alert('Booking confirmed! Check your bookings page.');
+      showToast('Booking confirmed! Check your bookings page.', 'success');
       navigate('/bookings');
     } catch (error) {
       console.error('Booking failed:', error);
-      alert(`Booking failed: ${error.message || 'Please try again.'}`);
+      showToast(`Booking failed: ${error.message || 'Please try again.'}`, 'error');
     }
   };
 
@@ -90,7 +92,7 @@ const Cart = () => {
   const saveEdit = (index) => {
     const item = cartItems[index];
     const nights = calculateNights(editForm.checkIn, editForm.checkOut);
-    
+
     const updated = cartItems.map((cartItem, i) => {
       if (i === index) {
         return {
@@ -116,7 +118,7 @@ const Cart = () => {
     const item = cartItems[index];
     const newRooms = Math.max(1, Math.min(10, (item.rooms || 1) + delta));
     const nights = calculateNights(item.checkIn, item.checkOut);
-    
+
     const updated = cartItems.map((cartItem, i) => {
       if (i === index) {
         return {
@@ -237,7 +239,7 @@ const Cart = () => {
                               <input
                                 type="date"
                                 value={editForm.checkIn}
-                                onChange={(e) => setEditForm({...editForm, checkIn: e.target.value})}
+                                onChange={(e) => setEditForm({ ...editForm, checkIn: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-yellow-400"
                               />
                             </div>
@@ -246,7 +248,7 @@ const Cart = () => {
                               <input
                                 type="date"
                                 value={editForm.checkOut}
-                                onChange={(e) => setEditForm({...editForm, checkOut: e.target.value})}
+                                onChange={(e) => setEditForm({ ...editForm, checkOut: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-yellow-400"
                               />
                             </div>
@@ -259,7 +261,7 @@ const Cart = () => {
                                 min="1"
                                 max="10"
                                 value={editForm.guests}
-                                onChange={(e) => setEditForm({...editForm, guests: parseInt(e.target.value)})}
+                                onChange={(e) => setEditForm({ ...editForm, guests: parseInt(e.target.value) })}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-yellow-400"
                               />
                             </div>
@@ -270,7 +272,7 @@ const Cart = () => {
                                 min="1"
                                 max="10"
                                 value={editForm.rooms}
-                                onChange={(e) => setEditForm({...editForm, rooms: parseInt(e.target.value)})}
+                                onChange={(e) => setEditForm({ ...editForm, rooms: parseInt(e.target.value) })}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-yellow-400"
                               />
                             </div>
@@ -305,7 +307,7 @@ const Cart = () => {
                               {item.guests} Guest{item.guests !== 1 ? 's' : ''}
                             </span>
                             <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded text-blue-700 dark:text-blue-300 font-medium">
-                              {item.nights || 1} Night{ (item.nights || 1) !== 1 ? 's' : ''}
+                              {item.nights || 1} Night{(item.nights || 1) !== 1 ? 's' : ''}
                             </span>
                           </div>
 
@@ -348,7 +350,7 @@ const Cart = () => {
             <div className="lg:col-span-1">
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-6 sticky top-28">
                 <h3 className="text-xl font-bold dark:text-white mb-6">Order Summary</h3>
-                
+
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>Subtotal ({totalRooms} rooms)</span>
@@ -365,17 +367,16 @@ const Cart = () => {
                   </div>
                 </div>
 
-                  <button 
-                    onClick={handleCheckout}
-                    disabled={cartItems.length === 0 || cartItems.some(item => !item.checkIn || !item.checkOut || item.checkIn === 'Not selected' || item.checkOut === 'Not selected')}
-                    className={`w-full py-3 rounded-lg font-semibold mb-4 transition-colors ${
-                      cartItems.length === 0 || cartItems.some(item => !item.checkIn || !item.checkOut || item.checkIn === 'Not selected' || item.checkOut === 'Not selected')
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        : 'bg-yellow-500 text-gray-900 hover:bg-yellow-400'
+                <button
+                  onClick={handleCheckout}
+                  disabled={cartItems.length === 0 || cartItems.some(item => !item.checkIn || !item.checkOut || item.checkIn === 'Not selected' || item.checkOut === 'Not selected')}
+                  className={`w-full py-3 rounded-lg font-semibold mb-4 transition-colors ${cartItems.length === 0 || cartItems.some(item => !item.checkIn || !item.checkOut || item.checkIn === 'Not selected' || item.checkOut === 'Not selected')
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-yellow-500 text-gray-900 hover:bg-yellow-400'
                     }`}
-                  >
-                    Proceed to Checkout
-                  </button>
+                >
+                  Proceed to Checkout
+                </button>
 
                 <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <p className="text-sm text-green-700 dark:text-green-400 text-center">

@@ -1,6 +1,5 @@
 package com.hotel;
 
-import org.modelmapper.Conditions;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -18,15 +17,7 @@ public class Application {
 		log.info("Server started on port 8080");
 	}
 
-	// centralized method to config model mapper
-	@Bean
-	public org.modelmapper.ModelMapper modelMapper() {
-		log.info("Configuring ModelMapper bean");
-		org.modelmapper.ModelMapper modelMapper = new org.modelmapper.ModelMapper();
-		// Skip null values when mapping to avoid overwriting existing data
-		modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
-		return modelMapper;
-	}
+	// ModelMapper bean is now configured in ModelMapperConfig.java
 
 	// centralized method to config password encoder
 	@Bean

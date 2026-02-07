@@ -39,6 +39,8 @@ public class AdminServiceImpl implements AdminService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
+    private final com.hotel.repository.ReviewRepository reviewRepository;
+    private final com.hotel.repository.ComplaintRepository complaintRepository;
 
     // Hotel Approval Management
     @Override
@@ -343,5 +345,65 @@ public class AdminServiceImpl implements AdminService {
             throw new ResourceNotFoundException("Location not found with ID: " + id);
         }
         locationRepository.deleteById(id);
+    }
+
+    // Booking Management
+    @Override
+    public List<BookingResponseDTO> getAllBookings() {
+        return bookingRepository.findAll().stream()
+                .map(this::mapToBookingResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Review Management
+    @Override
+    public List<com.hotel.entities.Review> getAllReviews() {
+        return reviewRepository.findAll();
+    }
+
+    @Override
+    public void deleteReview(Long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new ResourceNotFoundException("Review not found with ID: " + reviewId);
+        }
+        reviewRepository.deleteById(reviewId);
+        log.info("Review deleted: {}", reviewId);
+    }
+
+    // Complaint Management
+    @Override
+    public List<com.hotel.entities.Complaint> getAllComplaints() {
+        List<com.hotel.entities.Complaint> complaints = complaintRepository.findAll();
+        // Force load lazy relationships to avoid LazyInitializationException
+        complaints.forEach(c -> {
+            if (c.getUser() != null) c.getUser().getEmail();
+            if (c.getHotel() != null) c.getHotel().getName();
+            if (c.getBooking() != null) c.getBooking().getBookingReference();
+        });
+        return complaints;
+    }
+
+    @Override
+    public List<com.hotel.dtos.ComplaintResponseDTO> getAllComplaintsDTO() {
+        List<com.hotel.entities.Complaint> complaints = complaintRepository.findAll();
+        return complaints.stream().map(this::convertComplaintToDTO).collect(Collectors.toList());
+    }
+
+    private com.hotel.dtos.ComplaintResponseDTO convertComplaintToDTO(com.hotel.entities.Complaint complaint) {
+        com.hotel.dtos.ComplaintResponseDTO dto = new com.hotel.dtos.ComplaintResponseDTO();
+        dto.setId(complaint.getId());
+        dto.setHotelId(complaint.getHotel() != null ? complaint.getHotel().getId() : null);
+        dto.setHotelName(complaint.getHotel() != null ? complaint.getHotel().getName() : null);
+        dto.setBookingId(complaint.getBooking() != null ? complaint.getBooking().getId() : null);
+        dto.setBookingReference(complaint.getBooking() != null ? complaint.getBooking().getBookingReference() : null);
+        dto.setGuestName(complaint.getGuestName());
+        dto.setGuestEmail(complaint.getGuestEmail());
+        dto.setSubject(complaint.getSubject());
+        dto.setDescription(complaint.getDescription());
+        dto.setStatus(complaint.getStatus() != null ? complaint.getStatus().name() : null);
+        dto.setCreatedAt(complaint.getCreatedAt());
+        dto.setResolvedAt(complaint.getResolvedAt());
+        dto.setResolution(complaint.getResolution());
+        return dto;
     }
 }

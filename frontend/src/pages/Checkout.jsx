@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
+import {
   CreditCardIcon,
   LockClosedIcon,
   CheckCircleIcon,
   ShieldCheckIcon,
   MapPinIcon,
   CalendarIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ArrowDownTrayIcon
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../context/AuthContext";
-
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
-import { calculateNights, currency, downloadInvoice } from "../utils/bookingUtils";
+import { calculateNights, currency, downloadInvoice, sendInvoiceEmail } from "../utils/bookingUtils";
 import api from "../services/api";
+import toast from 'react-hot-toast';
 
 
 
@@ -42,6 +42,8 @@ const Checkout = () => {
     saveCard: false
   });
 
+  const [bookingRef, setBookingRef] = useState("");
+
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("hotelCart") || "[]");
     if (cart.length === 0) {
@@ -63,7 +65,7 @@ const Checkout = () => {
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       // Create bookings for each cart item
       const bookingPromises = cartItems.map(item => {
@@ -71,7 +73,7 @@ const Checkout = () => {
         if (!item.hotelId || !item.roomTypeId) {
           throw new Error(`Invalid booking: Missing hotel or room type for ${item.hotel}. Please re-add this item to your cart.`);
         }
-        
+
         const bookingData = {
           hotelId: item.hotelId,
           roomTypeId: item.roomTypeId,
@@ -95,10 +97,28 @@ const Checkout = () => {
       // Save to local booking history (optional, or rely on backend)
       const existingBookings = JSON.parse(localStorage.getItem("bookings") || "[]");
       // We can add the response DTOs here if needed
-      
+
       // Clear cart
       localStorage.removeItem("hotelCart");
       window.dispatchEvent(new Event("cartUpdated"));
+
+      const newBookingRef = Date.now().toString().slice(-8);
+      setBookingRef(newBookingRef);
+
+      // Construct booking object for invoice/email
+      const bookingForInvoice = {
+        id: newBookingRef,
+        hotel: cartItems[0]?.hotel,
+        checkIn: cartItems[0]?.checkIn,
+        checkOut: cartItems[0]?.checkOut,
+        roomType: cartItems[0]?.roomType,
+        price: total,
+        guestDetails: guestDetails,
+        roomTypeId: cartItems[0]?.roomTypeId // Ensure all needed fields are present
+      };
+
+      // Automatically trigger email (no download)
+      sendInvoiceEmail(bookingForInvoice);
 
       setLoading(false);
       setOrderComplete(true);
@@ -125,23 +145,24 @@ const Checkout = () => {
             </p>
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
               <p className="text-sm text-gray-600 dark:text-gray-400">Booking Reference</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">HBS-{Date.now().toString().slice(-8)}</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">HBS-{bookingRef}</p>
             </div>
 
             <div className="mb-8">
               <button
                 onClick={() => {
-                   // Create a temporary booking object for the invoice
-                   const bookingForInvoice = {
-                     id: Date.now().toString().slice(-8),
-                     hotel: cartItems[0]?.hotel,
-                     checkIn: cartItems[0]?.checkIn,
-                     checkOut: cartItems[0]?.checkOut,
-                     roomType: cartItems[0]?.roomType,
-                     price: total,
-                     guestDetails: guestDetails
-                   };
-                   downloadInvoice(bookingForInvoice);
+                  // Create a temporary booking object for the invoice
+                  // Create a temporary booking object for the invoice
+                  const bookingForInvoice = {
+                    id: bookingRef,
+                    hotel: cartItems[0]?.hotel,
+                    checkIn: cartItems[0]?.checkIn,
+                    checkOut: cartItems[0]?.checkOut,
+                    roomType: cartItems[0]?.roomType,
+                    price: total,
+                    guestDetails: guestDetails
+                  };
+                  downloadInvoice(bookingForInvoice);
                 }}
                 className="flex items-center justify-center gap-2 mx-auto px-6 py-3 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-xl font-semibold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition"
               >
@@ -181,11 +202,10 @@ const Checkout = () => {
             { num: 3, label: 'Confirmation' }
           ].map((s, i) => (
             <div key={s.num} className="flex items-center">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold transition-colors ${
-                step >= s.num 
-                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-              }`}>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold transition-colors ${step >= s.num
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                }`}>
                 {step > s.num ? <CheckCircleIcon className="h-6 w-6" /> : s.num}
               </div>
               <span className={`ml-2 font-medium ${step >= s.num ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -204,7 +224,7 @@ const Checkout = () => {
             {step === 1 && (
               <form onSubmit={handleGuestSubmit} className="bg-white dark:bg-gray-800 rounded-2xl border dark:border-gray-700 shadow-lg p-6">
                 <h2 className="text-xl font-bold dark:text-white mb-6">Guest Details</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
@@ -212,7 +232,7 @@ const Checkout = () => {
                       type="text"
                       required
                       value={guestDetails.firstName}
-                      onChange={(e) => setGuestDetails({...guestDetails, firstName: e.target.value})}
+                      onChange={(e) => setGuestDetails({ ...guestDetails, firstName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                   </div>
@@ -222,7 +242,7 @@ const Checkout = () => {
                       type="text"
                       required
                       value={guestDetails.lastName}
-                      onChange={(e) => setGuestDetails({...guestDetails, lastName: e.target.value})}
+                      onChange={(e) => setGuestDetails({ ...guestDetails, lastName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                   </div>
@@ -235,7 +255,7 @@ const Checkout = () => {
                       type="email"
                       required
                       value={guestDetails.email}
-                      onChange={(e) => setGuestDetails({...guestDetails, email: e.target.value})}
+                      onChange={(e) => setGuestDetails({ ...guestDetails, email: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                   </div>
@@ -245,7 +265,7 @@ const Checkout = () => {
                       type="tel"
                       required
                       value={guestDetails.phone}
-                      onChange={(e) => setGuestDetails({...guestDetails, phone: e.target.value})}
+                      onChange={(e) => setGuestDetails({ ...guestDetails, phone: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                   </div>
@@ -256,7 +276,7 @@ const Checkout = () => {
                   <textarea
                     rows={3}
                     value={guestDetails.specialRequests}
-                    onChange={(e) => setGuestDetails({...guestDetails, specialRequests: e.target.value})}
+                    onChange={(e) => setGuestDetails({ ...guestDetails, specialRequests: e.target.value })}
                     placeholder="Early check-in, room preferences, etc."
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                   />
@@ -282,7 +302,7 @@ const Checkout = () => {
                   <LockClosedIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <span className="text-sm text-green-700 dark:text-green-400">Your payment information is secure and encrypted</span>
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Card Number *</label>
                   <input
@@ -291,7 +311,7 @@ const Checkout = () => {
                     maxLength={19}
                     placeholder="1234 5678 9012 3456"
                     value={paymentDetails.cardNumber}
-                    onChange={(e) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, cardNumber: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                   />
                 </div>
@@ -303,7 +323,7 @@ const Checkout = () => {
                     required
                     placeholder="John Doe"
                     value={paymentDetails.cardName}
-                    onChange={(e) => setPaymentDetails({...paymentDetails, cardName: e.target.value})}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, cardName: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                   />
                 </div>
@@ -317,7 +337,7 @@ const Checkout = () => {
                       placeholder="MM/YY"
                       maxLength={5}
                       value={paymentDetails.expiry}
-                      onChange={(e) => setPaymentDetails({...paymentDetails, expiry: e.target.value})}
+                      onChange={(e) => setPaymentDetails({ ...paymentDetails, expiry: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                   </div>
@@ -329,7 +349,7 @@ const Checkout = () => {
                       maxLength={4}
                       placeholder="•••"
                       value={paymentDetails.cvv}
-                      onChange={(e) => setPaymentDetails({...paymentDetails, cvv: e.target.value})}
+                      onChange={(e) => setPaymentDetails({ ...paymentDetails, cvv: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                   </div>
@@ -369,7 +389,7 @@ const Checkout = () => {
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-gray-800 rounded-2xl border dark:border-gray-700 shadow-lg p-6 sticky top-28">
               <h3 className="text-xl font-bold dark:text-white mb-4">Order Summary</h3>
-              
+
               <div className="space-y-4 mb-6">
                 {cartItems.map((item, index) => (
                   <div key={index} className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">

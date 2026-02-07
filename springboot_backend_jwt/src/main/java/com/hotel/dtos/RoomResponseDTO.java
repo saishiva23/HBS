@@ -17,4 +17,8 @@ public class RoomResponseDTO {
     private String roomTypeName;
     private Boolean isActive;
     private String status;
+
+    // Room count information
+    private Integer roomTypeLimit; // RoomType.totalRooms
+    private Integer roomTypeUsed; // Actual count of rooms
 }

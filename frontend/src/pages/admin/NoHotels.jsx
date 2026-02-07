@@ -34,13 +34,14 @@ const NoHotels = () => {
 
                     {/* Title */}
                     <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-3">
-                        No Hotels Registered
+                        No Active Hotels
                     </h1>
 
                     {/* Message */}
                     <p className="text-center text-gray-600 dark:text-gray-300 text-sm mb-8">
-                        You haven't registered any hotels yet, or your hotels were removed by the admin.
-                        Start by registering your first property to begin managing bookings and rooms.
+                        {hotels.length === 0
+                            ? "You haven't registered any hotels yet. Start by registering your first property to begin managing bookings and rooms."
+                            : "Your hotels may be pending approval or have been temporarily disabled. Click 'Refresh Status' to check for updates or contact support if you believe this is an error."}
                     </p>
 
                     {/* Actions */}

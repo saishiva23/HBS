@@ -40,7 +40,13 @@ const ComplaintModal = ({ booking, onClose, onSuccess }) => {
                 description: description.trim()
             });
 
-            toast.success('Complaint submitted successfully. The hotel will review it soon.');
+            toast.success(
+                <div>
+                    <p className="font-bold">Complaint submitted successfully!</p>
+                    <p className="text-sm">The hotel will review it soon. Track status in My Complaints.</p>
+                </div>,
+                { duration: 5000 }
+            );
             onSuccess?.();
             onClose();
         } catch (error) {

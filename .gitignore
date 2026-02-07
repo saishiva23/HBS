@@ -53,3 +53,28 @@ target/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Documentation files (keep locally, exclude from Git)
+# Exclude all .md files except README.md
+*.md
+!README.md
+
+# Test and debug scripts
+*_test.js
+*_debug.js
+test_*.js
+debug_*.js
+check_*.js
+verify_*.js
+comprehensive_system_test.js
+
+# SQL scripts (keep locally for reference)
+*.sql
+!db/*.sql
+
+# Helper scripts and documentation
+GITIGNORE_SETUP.txt
+QUICK_REFERENCE.txt
+cleanup_git_tracking.bat
+verify_gitignore.bat
+commit_gitignore_changes.bat

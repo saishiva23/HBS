@@ -47,6 +47,7 @@ public class User extends BaseEntity {
     // private String confirmPassword;
     // Date , Calendar , GregorainCalendar - older Java API - @Temporal
     // no annotation required for modern java date times
+    @Column(nullable = false)
     private LocalDate dob;
     @Column(name = "reg_amount")
     private Integer regAmount;
@@ -55,7 +56,7 @@ public class User extends BaseEntity {
     private UserRole userRole;
     @Column(length = 14)
     private String phone;
-    @Column(length = 255)
+    @Column(length = 255, nullable = false)
     private String address;
     @Lob // column type - for Mysql : longblob
     @com.fasterxml.jackson.annotation.JsonIgnore

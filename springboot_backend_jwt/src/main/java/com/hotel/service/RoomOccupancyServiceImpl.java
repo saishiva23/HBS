@@ -49,6 +49,11 @@ public class RoomOccupancyServiceImpl implements RoomOccupancyService {
             occupancy.setStatus("ACTIVE");
 
             roomOccupancyRepository.save(occupancy);
+            
+            // Update room status to OCCUPIED
+            room.setStatus("OCCUPIED");
+            roomRepository.save(room);
+            
             log.info("Room {} occupied from {} to {} for booking {}",
                     room.getRoomNumber(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getId());
         }
@@ -61,6 +66,12 @@ public class RoomOccupancyServiceImpl implements RoomOccupancyService {
         for (RoomOccupancy occupancy : occupancies) {
             occupancy.setStatus("CANCELLED");
             roomOccupancyRepository.save(occupancy);
+            
+            // Update room status back to AVAILABLE
+            Room room = occupancy.getRoom();
+            room.setStatus("AVAILABLE");
+            roomRepository.save(room);
+            
             log.info("Room occupancy cancelled for room {} and booking {}",
                     occupancy.getRoom().getRoomNumber(), bookingId);
         }
@@ -101,6 +112,12 @@ public class RoomOccupancyServiceImpl implements RoomOccupancyService {
         for (RoomOccupancy occupancy : expiredOccupancies) {
             occupancy.setStatus("COMPLETED");
             roomOccupancyRepository.save(occupancy);
+            
+            // Update room status back to AVAILABLE after checkout
+            Room room = occupancy.getRoom();
+            room.setStatus("AVAILABLE");
+            roomRepository.save(room);
+            
             log.info("Room occupancy completed for room {} after checkout date",
                     occupancy.getRoom().getRoomNumber());
         }

@@ -126,10 +126,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public AuthResp authenticate(AuthRequest request) {
-        log.info("Authenticating user: {}", request.getEmail());
+        String receivedEmail = request.getEmail();
+        log.info("Authenticating user with email: '{}' (length: {}, contains @: {})",
+                receivedEmail,
+                receivedEmail != null ? receivedEmail.length() : 0,
+                receivedEmail != null && receivedEmail.contains("@"));
+
         try {
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new AuthenticationFailedException("Invalid email or password"));
+            User user = userRepository.findByEmail(receivedEmail)
+                    .orElseThrow(() -> new AuthenticationFailedException(
+                            "User by this email doesn't exist: " + receivedEmail));
 
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new AuthenticationFailedException("Invalid email or password");
@@ -157,7 +163,7 @@ public class UserServiceImpl implements UserService {
             // ---------------------------------------------
 
         } catch (Exception e) {
-            log.error("Authentication failed for user: {}", request.getEmail(), e);
+            log.error("Authentication failed for user: '{}', Message: {}", receivedEmail, e.getMessage());
             throw new AuthenticationFailedException(e.getMessage());
         }
     }

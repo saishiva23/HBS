@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import OwnerLayout from '../../layouts/OwnerLayout';
 import { useHotel } from '../../context/HotelContext';
 import { ownerBookingManagement } from '../../services/completeAPI';
+import { useToast } from '../../contexts/ToastContext';
 import {
     FaSearch,
     FaFilter,
@@ -16,6 +17,7 @@ import {
 
 const BookingManagement = () => {
     const { selectedHotel } = useHotel();
+    const { showToast } = useToast();
     const [bookings, setBookings] = useState([]);
     const [filteredBookings, setFilteredBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +41,7 @@ const BookingManagement = () => {
             setFilteredBookings(data);
         } catch (error) {
             console.error("Failed to fetch bookings", error);
-            alert('Failed to load bookings: ' + (error.response?.data?.message || error.message));
+            showToast('Failed to load bookings: ' + (error.response?.data?.message || error.message), 'error');
         } finally {
             setIsLoading(false);
         }
@@ -73,10 +75,10 @@ const BookingManagement = () => {
         try {
             await ownerBookingManagement.updateStatus(bookingId, newStatus);
             setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
-            alert(`Booking ${newStatus.toLowerCase()} successfully!`);
+            showToast(`Booking ${newStatus.toLowerCase()} successfully!`, 'success');
         } catch (error) {
             console.error("Failed to update status", error);
-            alert('Failed to update status: ' + (error.response?.data?.message || error.message));
+            showToast('Failed to update status: ' + (error.response?.data?.message || error.message), 'error');
         }
     };
 

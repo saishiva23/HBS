@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   FaHotel,
   FaArrowRight,
@@ -28,6 +29,8 @@ const Hoteliers = () => {
     ownerEmail: '',
     password: '',
     ownerPhone: '',
+    ownerDob: '',
+    ownerAddress: '',
     // Hotel Details
     hotelName: '',
     hotelType: 'Hotel',
@@ -124,7 +127,10 @@ const Hoteliers = () => {
       if (token) {
         // Logged in: Create hotel only
         await ownerAPI.createHotel(hotelData);
-        alert('Hotel registered successfully! Your property is now active and ready for bookings.');
+        toast.success('Hotel registered successfully! Your property is now active and ready for bookings.', {
+          duration: 4000,
+          position: 'top-right',
+        });
         navigate('/owner/dashboard');
       } else {
         // Public: Create User + Hotel with Auto-Login
@@ -138,7 +144,9 @@ const Hoteliers = () => {
             lastName: lastName,
             email: formData.ownerEmail,
             password: formData.password,
-            phone: formData.ownerPhone
+            phone: formData.ownerPhone,
+            dob: formData.ownerDob,
+            address: formData.ownerAddress
           },
           hotel: hotelData
         };
@@ -156,7 +164,10 @@ const Hoteliers = () => {
           }));
         }
 
-        alert('Hotel registered successfully! You are now logged in. Your property is active and ready for bookings.');
+        toast.success('Hotel registered successfully! You are now logged in. Your property is active and ready for bookings.', {
+          duration: 4000,
+          position: 'top-right',
+        });
       }
 
       // Reset form
@@ -167,6 +178,8 @@ const Hoteliers = () => {
         ownerEmail: '',
         password: '',
         ownerPhone: '',
+        ownerDob: '',
+        ownerAddress: '',
         hotelName: '',
         hotelType: 'Hotel',
         starRating: '3',
@@ -185,18 +198,33 @@ const Hoteliers = () => {
     } catch (error) {
       console.error('Hotel registration error:', error);
 
-      // Extract error message from response
-      let errorMessage = 'Failed to register hotel. Please try again.';
+      // Handle validation errors (object with field-specific errors)
+      if (error && typeof error === 'object' && !error.message && !error.error) {
+        // Display each validation error as a separate toast
+        Object.entries(error).forEach(([field, message]) => {
+          const fieldName = field.split('.').pop(); // Get last part (e.g., 'address' from 'user.address')
+          toast.error(`${fieldName}: ${message}`, {
+            duration: 5000,
+            position: 'top-right',
+          });
+        });
+      } else {
+        // Handle general error messages
+        let errorMessage = 'Failed to register hotel. Please try again.';
 
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.error) {
-        errorMessage = error.error;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.error) {
+          errorMessage = error.error;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+
+        toast.error(errorMessage, {
+          duration: 4000,
+          position: 'top-right',
+        });
       }
-
-      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -464,6 +492,30 @@ const Hoteliers = () => {
                         value={formData.ownerPhone}
                         onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
                         placeholder="+1 555-0000"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Date of Birth *
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.ownerDob}
+                        onChange={(e) => setFormData({ ...formData, ownerDob: e.target.value })}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Address *
+                      </label>
+                      <textarea
+                        value={formData.ownerAddress}
+                        onChange={(e) => setFormData({ ...formData, ownerAddress: e.target.value })}
+                        placeholder="Enter your full address (min. 10 characters)"
+                        rows="3"
                         className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
                       />
                     </div>

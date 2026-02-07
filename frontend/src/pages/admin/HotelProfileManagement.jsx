@@ -3,7 +3,7 @@ import OwnerLayout from '../../layouts/OwnerLayout';
 import { useHotel } from '../../context/HotelContext';
 import { ownerHotelManagement } from '../../services/completeAPI';
 import { normalizeImageUrl, getUrlTypeMessage } from '../../utils/imageUtils';
-import toast from 'react-hot-toast';
+import { useToast } from '../../contexts/ToastContext';
 import {
     FaBuilding,
     FaMapMarkerAlt,
@@ -22,6 +22,7 @@ import {
 
 const HotelProfileManagement = () => {
     const { selectedHotel } = useHotel();
+    const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
     const [hotelData, setHotelData] = useState({
@@ -72,6 +73,11 @@ const HotelProfileManagement = () => {
                 description: data.description || '',
                 rating: data.starRating || 3,
                 // Missing fields in backend will remain blank or default
+                phone: data.phone || '',
+                email: data.email || '',
+                website: data.website || '',
+                checkInTime: data.checkInTime || '12:00',
+                checkOutTime: data.checkOutTime || '11:00',
             });
 
             // Parse amenities/images if needed, or if API returns list for DTO
@@ -156,11 +162,11 @@ const HotelProfileManagement = () => {
                 images: images,
             };
             await ownerHotelManagement.updateHotel(selectedHotel.id, payload);
-            alert('Hotel profile updated successfully!');
+            showToast('Hotel profile updated successfully!', 'success');
             fetchHotelDetails();
         } catch (error) {
             console.error("Failed to update profile", error);
-            alert("Failed to update: " + error.message);
+            showToast("Failed to update: " + error.message, 'error');
         }
     };
 
@@ -451,10 +457,10 @@ const HotelProfileManagement = () => {
                                                         const normalizedUrl = normalizeImageUrl(val);
                                                         if (normalizedUrl) {
                                                             setImages(prev => [...prev, normalizedUrl]);
-                                                            toast.success(getUrlTypeMessage(val));
+                                                            showToast(getUrlTypeMessage(val), 'success');
                                                             e.target.value = '';
                                                         } else {
-                                                            toast.error('Invalid image URL. Please try again.');
+                                                            showToast('Invalid image URL. Please try again.', 'error');
                                                         }
                                                     }
                                                 }
@@ -469,10 +475,10 @@ const HotelProfileManagement = () => {
                                                     const normalizedUrl = normalizeImageUrl(val);
                                                     if (normalizedUrl) {
                                                         setImages(prev => [...prev, normalizedUrl]);
-                                                        toast.success(getUrlTypeMessage(val));
+                                                        showToast(getUrlTypeMessage(val), 'success');
                                                         input.value = '';
                                                     } else {
-                                                        toast.error('Invalid image URL. Please check the format.');
+                                                        showToast('Invalid image URL. Please check the format.', 'error');
                                                     }
                                                 }
                                             }}

@@ -19,59 +19,8 @@ export const ReviewsProvider = ({ children }) => {
     if (savedReviews) {
       setReviews(JSON.parse(savedReviews));
     } else {
-      // Initial mock reviews
-      const mockReviews = [
-        {
-          id: 1,
-          hotelId: 4, // Taj Lands End
-          hotelName: "Taj Lands End",
-          userId: "user1",
-          userName: "Rahul Sharma",
-          rating: 5,
-          title: "Excellent experience!",
-          comment: "The sea view was breathtaking. Staff was extremely helpful and the food was amazing.",
-          date: "2026-01-15",
-          helpful: 12
-        },
-        {
-          id: 2,
-          hotelId: 4, // Taj Lands End
-          hotelName: "Taj Lands End",
-          userId: "user2",
-          userName: "Priya Patel",
-          rating: 4,
-          title: "Great stay but pricey",
-          comment: "Beautiful property with excellent amenities. A bit expensive but worth it for special occasions.",
-          date: "2026-01-10",
-          helpful: 8
-        },
-        {
-          id: 3,
-          hotelId: 16, // ITC Grand Chola
-          hotelName: "ITC Grand Chola",
-          userId: "user1",
-          userName: "Rahul Sharma",
-          rating: 5,
-          title: "Amazing stay!",
-          comment: "Exceptional service and beautiful property. The rooms are spacious and well-maintained.",
-          date: "2026-01-08",
-          helpful: 15
-        },
-        {
-          id: 4,
-          hotelId: 2, // The Oberoi Udaivilas
-          hotelName: "The Oberoi Udaivilas",
-          userId: "user3",
-          userName: "Amit Kumar",
-          rating: 5,
-          title: "Best hotel in India",
-          comment: "Simply the best luxury experience. The lake view is mesmerizing and service is impeccable.",
-          date: "2025-12-20",
-          helpful: 25
-        },
-      ];
-      setReviews(mockReviews);
-      localStorage.setItem('hotelReviews', JSON.stringify(mockReviews));
+      // Start with empty reviews - all data from backend
+      setReviews([]);
     }
   }, []);
 

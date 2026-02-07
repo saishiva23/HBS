@@ -12,9 +12,11 @@ import {
 import OwnerLayout from '../../layouts/OwnerLayout';
 import { useHotel } from '../../context/HotelContext';
 import { ownerRoomManagement } from '../../services/completeAPI';
+import { useToast } from '../../contexts/ToastContext';
 
 const RoomManagement = () => {
     const { selectedHotel } = useHotel();
+    const { showToast } = useToast();
     const [rooms, setRooms] = useState([]);
     const [roomTypes, setRoomTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +35,7 @@ const RoomManagement = () => {
         if (selectedHotel) {
             fetchRooms();
             fetchRoomTypes();
+            fetchRoomStats();
         }
     }, [selectedHotel]);
 
@@ -44,7 +47,7 @@ const RoomManagement = () => {
             setRooms(data);
         } catch (error) {
             console.error('Failed to fetch rooms', error);
-            alert('Failed to load rooms: ' + error.message);
+            showToast('Failed to load rooms: ' + error.message, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -60,12 +63,37 @@ const RoomManagement = () => {
         }
     };
 
-    const stats = [
-        { label: 'Total Rooms', value: rooms.length, color: 'from-blue-500 to-blue-600' },
-        { label: 'Available', value: rooms.filter(r => r.status === 'AVAILABLE').length, color: 'from-green-500 to-green-600' },
-        { label: 'Occupied', value: rooms.filter(r => r.status === 'OCCUPIED').length, color: 'from-yellow-500 to-yellow-600' },
-        { label: 'Maintenance', value: rooms.filter(r => r.status === 'MAINTENANCE').length, color: 'from-red-500 to-red-600' }
-    ];
+    const fetchRoomStats = async () => {
+        if (!selectedHotel) return;
+        try {
+            const response = await ownerRoomManagement.getRoomStats(selectedHotel.id);
+            const statsData = response.data || response;
+
+            setStats([
+                { label: 'Total Rooms', value: statsData.totalRooms || 0, color: 'from-blue-500 to-blue-600' },
+                { label: 'Available', value: statsData.availableRooms || 0, color: 'from-green-500 to-green-600' },
+                { label: 'Occupied', value: statsData.occupiedRooms || 0, color: 'from-yellow-500 to-yellow-600' },
+                { label: 'Maintenance', value: statsData.maintenanceRooms || 0, color: 'from-red-500 to-red-600' }
+            ]);
+        } catch (error) {
+            console.error('Failed to fetch room stats', error);
+            // Fall back to static calculation if API fails
+            const fallbackStats = [
+                { label: 'Total Rooms', value: rooms.length, color: 'from-blue-500 to-blue-600' },
+                { label: 'Available', value: rooms.filter(r => r.status === 'AVAILABLE').length, color: 'from-green-500 to-green-600' },
+                { label: 'Occupied', value: rooms.filter(r => r.status === 'OCCUPIED').length, color: 'from-yellow-500 to-yellow-600' },
+                { label: 'Maintenance', value: rooms.filter(r => r.status === 'MAINTENANCE').length, color: 'from-red-500 to-red-600' }
+            ];
+            setStats(fallbackStats);
+        }
+    };
+
+    const [stats, setStats] = useState([
+        { label: 'Total Rooms', value: 0, color: 'from-blue-500 to-blue-600' },
+        { label: 'Available', value: 0, color: 'from-green-500 to-green-600' },
+        { label: 'Occupied', value: 0, color: 'from-yellow-500 to-yellow-600' },
+        { label: 'Maintenance', value: 0, color: 'from-red-500 to-red-600' }
+    ]);
 
     const filteredRooms = rooms.filter(room => {
         const matchesSearch = room.roomNumber?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -114,21 +142,21 @@ const RoomManagement = () => {
         try {
             await ownerRoomManagement.deleteRoomFromList(selectedHotel.id, room.id);
             await fetchRooms();
-            alert('Room deleted successfully');
+            showToast('Room deleted successfully', 'success');
         } catch (error) {
             console.error('Failed to delete room', error);
-            alert('Failed to delete: ' + error.message);
+            showToast('Failed to delete: ' + error.message, 'error');
         }
     };
 
     const handleAddRoom = async () => {
         if (!selectedHotel) {
-            alert('No hotel selected!');
+            showToast('No hotel selected!', 'warning');
             return;
         }
 
         if (!formData.roomNumber || !formData.roomTypeId) {
-            alert('Please fill in all required fields');
+            showToast('Please fill in all required fields', 'warning');
             return;
         }
 
@@ -142,17 +170,17 @@ const RoomManagement = () => {
 
             if (editingRoom) {
                 await ownerRoomManagement.updateRoomInList(selectedHotel.id, editingRoom.id, payload);
-                alert('Room updated successfully');
+                showToast('Room updated successfully', 'success');
             } else {
                 await ownerRoomManagement.addRoomToList(selectedHotel.id, payload);
-                alert('Room added successfully');
+                showToast('Room added successfully', 'success');
             }
 
             await fetchRooms();
             resetForm();
         } catch (error) {
             console.error('Failed to save room', error);
-            alert('Failed to save: ' + error.message);
+            showToast('Failed to save: ' + error.message, 'error');
         }
     };
 
@@ -282,6 +310,11 @@ const RoomManagement = () => {
                                                 <FaBed className="h-5 w-5 text-blue-500" />
                                                 <span>{room.roomTypeName || 'N/A'}</span>
                                             </div>
+                                            {room.roomTypeUsed != null && room.roomTypeLimit != null && (
+                                                <div className="text-xs text-gray-500 dark:text-gray-500">
+                                                    {room.roomTypeUsed} / {room.roomTypeLimit} rooms of this type
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Actions */}
@@ -344,10 +377,28 @@ const RoomManagement = () => {
                                             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:border-blue-500 transition-all"
                                         >
                                             <option value="">Select a room type...</option>
-                                            {roomTypes.map(type => (
-                                                <option key={type.id} value={type.id}>{type.name}</option>
-                                            ))}
+                                            {roomTypes.map(type => {
+                                                const usedCount = rooms.filter(r => r.roomTypeId === type.id).length;
+                                                const isLimitReached = usedCount >= type.totalRooms;
+                                                return (
+                                                    <option key={type.id} value={type.id} disabled={isLimitReached}>
+                                                        {type.name} ({usedCount}/{type.totalRooms}) {isLimitReached ? ' - Limit Reached' : ''}
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
+
+                                        {/* Show warning if limit is reached */}
+                                        {formData.roomTypeId && (() => {
+                                            const selectedType = roomTypes.find(rt => rt.id == formData.roomTypeId);
+                                            const usedCount = rooms.filter(r => r.roomTypeId == formData.roomTypeId).length;
+                                            const canAdd = !selectedType || usedCount < selectedType.totalRooms;
+                                            return !canAdd ? (
+                                                <div className="mt-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-400">
+                                                    ⚠️ Room limit reached for this type. Please increase the total rooms in Room Types section first.
+                                                </div>
+                                            ) : null;
+                                        })()}
                                     </div>
 
                                     <div>

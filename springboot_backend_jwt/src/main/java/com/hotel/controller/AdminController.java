@@ -24,6 +24,10 @@ import com.hotel.service.AdminService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -32,17 +36,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 @Slf4j
+@Tag(name = "Admin", description = "Administrative endpoints for system management (Admin access required)")
 public class AdminController {
 
     private final AdminService adminService;
 
     // Hotel Approval Management
     @GetMapping("/hotels")
+    @Operation(summary = "Get all hotels", description = "Retrieves all hotels in the system regardless of status")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Hotels retrieved successfully")
     public ResponseEntity<List<Hotel>> getAllHotels() {
         return ResponseEntity.ok(adminService.getAllHotels());
     }
 
     @GetMapping("/hotels/pending")
+    @Operation(summary = "Get pending hotels", description = "Retrieves all hotels awaiting admin approval")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Pending hotels retrieved successfully")
     public ResponseEntity<List<Hotel>> getPendingHotels() {
         log.info("Getting pending hotels");
         return ResponseEntity.ok(adminService.getPendingHotels());
@@ -126,6 +135,42 @@ public class AdminController {
     public ResponseEntity<com.hotel.dtos.AdminAnalyticsDTO> getAnalytics() {
         log.info("Getting admin analytics");
         return ResponseEntity.ok(adminService.getAnalytics());
+    }
+
+    // Booking Management
+    @GetMapping("/bookings")
+    @Operation(summary = "Get all bookings", description = "Retrieves all bookings in the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
+    public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
+        log.info("Getting all bookings");
+        return ResponseEntity.ok(adminService.getAllBookings());
+    }
+
+    // Review Management
+    @GetMapping("/reviews")
+    @Operation(summary = "Get all reviews", description = "Retrieves all reviews in the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Reviews retrieved successfully")
+    public ResponseEntity<List<com.hotel.entities.Review>> getAllReviews() {
+        log.info("Getting all reviews");
+        return ResponseEntity.ok(adminService.getAllReviews());
+    }
+
+    @DeleteMapping("/reviews/{id}")
+    @Operation(summary = "Delete review", description = "Deletes a review from the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Review deleted successfully")
+    public ResponseEntity<ApiResponse> deleteReview(@PathVariable Long id) {
+        log.info("Deleting review ID: {}", id);
+        adminService.deleteReview(id);
+        return ResponseEntity.ok(new ApiResponse("Success", "Review deleted successfully"));
+    }
+
+    // Complaint Management
+    @GetMapping("/complaints")
+    @Operation(summary = "Get all complaints", description = "Retrieves all complaints in the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Complaints retrieved successfully")
+    public ResponseEntity<List<com.hotel.dtos.ComplaintResponseDTO>> getAllComplaints() {
+        log.info("Getting all complaints");
+        return ResponseEntity.ok(adminService.getAllComplaintsDTO());
     }
 
     // Recent Activity
