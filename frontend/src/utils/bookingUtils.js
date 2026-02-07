@@ -77,7 +77,9 @@ export const downloadInvoice = async (booking) => {
       checkInDate: bookingDate.toISOString(),
       checkOutDate: checkoutDate.toISOString(),
       totalPrice: booking.price || 0,
-      bookingReference: booking.id ? `HB-${booking.id}` : "REF-000"
+      totalPrice: booking.price || 0,
+      bookingReference: booking.id ? `HB-${booking.id}` : "REF-000",
+      guestEmail: booking.guestDetails?.email || ""
     };
 
     const response = await fetch('http://localhost:5000/api/invoice/generate', {
@@ -105,5 +107,43 @@ export const downloadInvoice = async (booking) => {
   } catch (error) {
     console.error('Error downloading invoice:', error);
     alert('Failed to download invoice. Please make sure the Invoice Service is running (dotnet run).');
+  }
+};
+
+/**
+ * Triggers invoice generation to send email only (no download)
+ * @param {object} booking 
+ */
+export const sendInvoiceEmail = async (booking) => {
+  try {
+    const bookingDate = new Date(booking.checkIn);
+    const checkoutDate = new Date(booking.checkOut);
+
+    const invoiceRequest = {
+      GuestName: booking.guestDetails?.firstName ? `${booking.guestDetails.firstName} ${booking.guestDetails.lastName}` : "Guest",
+      HotelName: booking.hotel || "Hotel Name",
+      RoomType: booking.roomType || "Standard Room",
+      CheckInDate: bookingDate.toISOString(),
+      CheckOutDate: checkoutDate.toISOString(),
+      TotalPrice: booking.price || 0,
+      BookingReference: booking.id ? `HB-${booking.id}` : "REF-000",
+      GuestEmail: booking.guestDetails?.email || ""
+    };
+
+    // Debug check
+    // alert(`Sending invoice email to: ${invoiceRequest.GuestEmail}`);
+
+    await fetch('http://localhost:5000/api/invoice/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(invoiceRequest),
+    });
+
+    console.log("Invoice email trigger sent successfully");
+
+  } catch (error) {
+    console.error('Error triggering invoice email:', error);
   }
 };

@@ -15,9 +15,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j // This adds the logger field automatically
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
@@ -31,7 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ") && authHeader.length() > 7) {
             // 2. extract jwt
             String jwt = authHeader.substring(7).trim();
-            // 2.5. Check if token is not empty and has proper JWT format (contains at least 2 dots)
+            // 2.5. Check if token is not empty and has proper JWT format (contains at least
+            // 2 dots)
             if (jwt.isEmpty() || !jwt.contains(".")) {
                 filterChain.doFilter(request, response);
                 return;
@@ -54,6 +57,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 9. continue filter chain
         filterChain.doFilter(request, response);
 
+    }
+
+    @Override
+    protected void initFilterBean() throws ServletException {
+        // Manually initialize the logger field using reflection to fix
+        // NullPointerException
+        // GenericFilterBean has a final logger field that isn't initialized when using
+        // @Component
+        try {
+            java.lang.reflect.Field loggerField = org.springframework.web.filter.GenericFilterBean.class
+                    .getDeclaredField("logger");
+            loggerField.setAccessible(true);
+            loggerField.set(this, org.apache.commons.logging.LogFactory.getLog(getClass()));
+        } catch (Exception e) {
+            // If reflection fails, just log it with SLF4J
+            log.error("Failed to initialize logger field via reflection", e);
+        }
+        super.initFilterBean();
     }
 
 }

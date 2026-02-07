@@ -51,12 +51,12 @@ const Bookings = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUserBookings();
-      
+
       // Poll for booking updates every 30 seconds
       const pollInterval = setInterval(() => {
         fetchUserBookings();
       }, 30000); // 30 seconds
-      
+
       return () => clearInterval(pollInterval);
     }
   }, [isAuthenticated]);
@@ -86,16 +86,16 @@ const Bookings = () => {
         image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=60",
         reviewed: false
       }));
-      
+
       // Check for newly cancelled bookings and show toast
       const previousBookings = bookings;
       const newlyCancelled = backendBookings.filter(booking => {
-        const wasActive = previousBookings.find(prev => 
+        const wasActive = previousBookings.find(prev =>
           prev.id === booking.id && prev.status !== 'cancelled'
         );
         return booking.status === 'cancelled' && wasActive;
       });
-      
+
       // Show toast for newly cancelled bookings
       if (newlyCancelled.length > 0) {
         newlyCancelled.forEach(booking => {
@@ -105,7 +105,7 @@ const Bookings = () => {
           );
         });
       }
-      
+
       setBookings(backendBookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -168,10 +168,6 @@ const Bookings = () => {
   // Open Complaint Modal
   const openComplaintModal = (booking) => {
     setSelectedBooking(booking);
-    setComplaintForm({
-      subject: '',
-      description: ''
-    });
     setShowComplaintModal(true);
   };
 
@@ -376,6 +372,19 @@ const Bookings = () => {
                             {currency(booking.price)}
                           </p>
                         </div>
+
+                        {/* Assigned Room Numbers */}
+                        {booking.assignedRoomNumbers && booking.assignedRoomNumbers.length > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Assigned Rooms</p>
+                            <p className="font-semibold dark:text-white flex items-center gap-1">
+                              <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                              </svg>
+                              {booking.assignedRoomNumbers.join(', ')}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Show existing review if available */}
@@ -585,7 +594,7 @@ const Bookings = () => {
           onSuccess={handleComplaintSuccess}
         />
       )}
-      
+
       {/* Booking Cancellation Notification Banner */}
       <BookingNotificationBanner bookings={bookings} />
     </AccountLayout>

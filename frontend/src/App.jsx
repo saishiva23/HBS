@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import Favorites from './pages/Favorites';
 import RecentlyViewed from './pages/RecentlyViewed';
 import Bookings from './pages/Bookings';
+import Complaints from './pages/Complaints';
 import Help from './pages/Help';
 import Hoteliers from './pages/Hoteliers';
 import SearchResults from './pages/SearchResults';
@@ -58,6 +59,7 @@ function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/recent" element={<RecentlyViewed />} />
               <Route path="/bookings" element={<Bookings />} />
+              <Route path="/complaints" element={<Complaints />} />
               <Route path="/help" element={<Help />} />
               <Route path="/hoteliers" element={<Hoteliers />} />
               <Route path="/search" element={<SearchResults />} />

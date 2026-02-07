@@ -29,6 +29,10 @@ import com.hotel.service.HotelOwnerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/owner")
@@ -37,12 +41,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_HOTEL_MANAGER')")
 @Slf4j
+@Tag(name = "Hotel Owner", description = "Hotel owner/manager dashboard and management endpoints (Hotel Manager access required)")
 public class HotelOwnerController {
 
     private final HotelOwnerService hotelOwnerService;
 
     // Hotel Management
     @GetMapping("/hotels")
+    @Operation(summary = "Get my hotels", description = "Retrieves all hotels owned by the authenticated hotel manager")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Hotels retrieved successfully")
     public ResponseEntity<List<Hotel>> getMyHotels(Principal principal) {
         log.info("Getting hotels for owner: {}", principal.getName());
         return ResponseEntity.ok(hotelOwnerService.getOwnerHotels(principal.getName()));
@@ -54,6 +61,11 @@ public class HotelOwnerController {
     }
 
     @PostMapping("/hotels")
+    @Operation(summary = "Create hotel", description = "Creates a new hotel owned by the authenticated hotel manager")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Hotel created successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid hotel data")
+    })
     public ResponseEntity<Hotel> createHotel(@RequestBody @Valid HotelDTO hotelDTO, Principal principal) {
         log.info("Creating hotel for owner: {}", principal.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -78,6 +90,8 @@ public class HotelOwnerController {
     }
 
     @PostMapping("/hotels/{hotelId}/rooms")
+    @Operation(summary = "Add room type", description = "Adds a new room type to a hotel owned by the authenticated manager")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Room type added successfully")
     public ResponseEntity<RoomType> addRoomType(@PathVariable Long hotelId,
             @RequestBody @Valid RoomTypeDTO roomTypeDTO, Principal principal) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -122,8 +136,16 @@ public class HotelOwnerController {
         return ResponseEntity.ok(hotelOwnerService.deleteRoom(hotelId, roomId, principal.getName()));
     }
 
+    // Room Statistics - Real-time occupancy data
+    @GetMapping("/hotels/{hotelId}/room-stats")
+    public ResponseEntity<com.hotel.dtos.RoomStatsDTO> getRoomStats(@PathVariable Long hotelId, Principal principal) {
+        return ResponseEntity.ok(hotelOwnerService.getRoomStats(hotelId, principal.getName()));
+    }
+
     // Booking Management
     @GetMapping("/bookings")
+    @Operation(summary = "Get my hotel bookings", description = "Retrieves all bookings for hotels owned by the authenticated manager")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
     public ResponseEntity<List<BookingResponseDTO>> getMyHotelBookings(Principal principal) {
         log.info("Getting bookings for owner: {}", principal.getName());
         return ResponseEntity.ok(hotelOwnerService.getOwnerBookings(principal.getName()));
@@ -142,6 +164,8 @@ public class HotelOwnerController {
 
     // Dashboard Stats
     @GetMapping("/dashboard/stats")
+    @Operation(summary = "Get dashboard statistics", description = "Retrieves comprehensive statistics for the hotel owner's dashboard")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Dashboard stats retrieved successfully")
     public ResponseEntity<?> getDashboardStats(Principal principal) {
         return ResponseEntity.ok(hotelOwnerService.getOwnerDashboardStats(principal.getName()));
     }

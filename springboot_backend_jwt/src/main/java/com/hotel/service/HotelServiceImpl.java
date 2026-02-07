@@ -39,6 +39,7 @@ public class HotelServiceImpl implements HotelService {
     private final PasswordEncoder passwordEncoder;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private final com.hotel.security.JwtUtils jwtUtils;
+    private final com.hotel.repository.LocationRepository locationRepository;
 
     @Override
     public List<Hotel> getAllHotels() {
@@ -208,6 +209,9 @@ public class HotelServiceImpl implements HotelService {
             Hotel savedHotel = hotelRepository.save(hotel);
             log.info("Hotel saved with ID: {}", savedHotel.getId());
 
+            // 5. Auto-create location if it doesn't exist
+            createLocationIfNotExists(savedHotel.getCity(), savedHotel.getState());
+
             return savedHotel;
         } catch (Exception e) {
             log.error("Error adding hotel", e);
@@ -365,6 +369,9 @@ public class HotelServiceImpl implements HotelService {
         Hotel savedHotel = hotelRepository.save(hotel);
         log.info("Hotel registered with ID: {}", savedHotel.getId());
 
+        // Auto-create location
+        createLocationIfNotExists(savedHotel.getCity(), savedHotel.getState());
+
         return savedHotel;
     }
 
@@ -445,6 +452,9 @@ public class HotelServiceImpl implements HotelService {
         Hotel savedHotel = hotelRepository.save(hotel);
         log.info("Hotel registered with ID: {}", savedHotel.getId());
 
+        // Auto-create location
+        createLocationIfNotExists(savedHotel.getCity(), savedHotel.getState());
+
         // 3. Generate JWT Token for auto-login
         String token = jwtUtils.generateToken(
                 savedUser.getEmail(),
@@ -461,6 +471,25 @@ public class HotelServiceImpl implements HotelService {
 
         log.info("Authentication response created for user: {}", savedUser.getEmail());
         return authResp;
+    }
+
+    private void createLocationIfNotExists(String city, String state) {
+        try {
+            if (city == null || city.trim().isEmpty())
+                return;
+            boolean exists = locationRepository.findByCity(city.trim()).isPresent();
+            if (!exists) {
+                com.hotel.entities.Location location = new com.hotel.entities.Location();
+                location.setCity(city.trim());
+                location.setState(state != null ? state.trim() : "");
+                location.setCountry("India");
+                location.setAddedDate(java.time.LocalDate.now());
+                locationRepository.save(location);
+                log.info("Auto-created location: {}", city);
+            }
+        } catch (Exception e) {
+            log.error("Failed to auto-create location: {}", city, e);
+        }
     }
 
 }

@@ -9,5 +9,6 @@ namespace InvoiceService.Models
         public DateTime CheckOutDate { get; set; }
         public decimal TotalPrice { get; set; }
         public string BookingReference { get; set; } = string.Empty;
+        public string? GuestEmail { get; set; }
     }
 }

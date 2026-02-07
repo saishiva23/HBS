@@ -9,6 +9,10 @@ import lombok.Setter;
 @Setter
 public class ComplaintResponseDTO {
     private Long id;
+    private Long hotelId;
+    private String hotelName;
+    private Long bookingId;
+    private String bookingReference;
     private String guestName;
     private String guestEmail;
     private String subject;
@@ -17,9 +21,4 @@ public class ComplaintResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
     private String resolution;
-    private String bookingReference;
-
-    public void setBookingReference(String bookingReference) {
-        this.bookingReference = bookingReference;
-    }
 }

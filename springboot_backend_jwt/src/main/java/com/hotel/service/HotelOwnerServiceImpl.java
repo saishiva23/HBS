@@ -42,10 +42,12 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
     private final HotelRepository hotelRepository;
     private final RoomTypeRepository roomTypeRepository;
     private final RoomRepository roomRepository;
+    private final com.hotel.repository.RoomOccupancyRepository roomOccupancyRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final com.hotel.repository.ReviewRepository reviewRepository;
     private final com.hotel.repository.ComplaintRepository complaintRepository;
+    private final com.hotel.repository.LocationRepository locationRepository;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
 
@@ -170,7 +172,16 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
         roomType.setPricePerNight(roomTypeDTO.getPricePerNight());
         roomType.setCapacity(roomTypeDTO.getCapacity());
         roomType.setBeds(roomTypeDTO.getBeds());
+
+        // Validate totalRooms change
         if (roomTypeDTO.getTotalRooms() != null && roomTypeDTO.getTotalRooms() > 0) {
+            Long existingRoomCount = roomRepository.countByRoomTypeId(roomTypeId);
+            if (roomTypeDTO.getTotalRooms() < existingRoomCount) {
+                throw new IllegalStateException(
+                        "Cannot reduce total rooms to " + roomTypeDTO.getTotalRooms() +
+                                ". " + existingRoomCount + " individual rooms already exist. " +
+                                "Please delete some rooms first.");
+            }
             roomType.setTotalRooms(roomTypeDTO.getTotalRooms());
         }
 
@@ -217,6 +228,12 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
                     dto.setRoomTypeName(room.getRoomType().getName());
                     dto.setIsActive(room.getIsActive());
                     dto.setStatus(room.getStatus());
+
+                    // Add room count information
+                    dto.setRoomTypeLimit(room.getRoomType().getTotalRooms());
+                    Long usedCount = roomRepository.countByRoomTypeId(room.getRoomType().getId());
+                    dto.setRoomTypeUsed(usedCount.intValue());
+
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -235,6 +252,15 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
 
         if (!roomType.getHotel().getId().equals(hotelId)) {
             throw new IllegalArgumentException("Room type does not belong to this hotel");
+        }
+
+        // Validate room count doesn't exceed totalRooms limit
+        Long currentCount = roomRepository.countByRoomTypeId(roomDTO.getRoomTypeId());
+        if (currentCount >= roomType.getTotalRooms()) {
+            throw new IllegalStateException(
+                    "Cannot add more rooms. Room type '" + roomType.getName() +
+                            "' allows maximum " + roomType.getTotalRooms() + " rooms. " +
+                            currentCount + " rooms already exist.");
         }
 
         Room room = new Room();
@@ -295,6 +321,30 @@ public class HotelOwnerServiceImpl implements HotelOwnerService {
 
         roomRepository.delete(room);
         return new ApiResponse("Success", "Room deleted successfully");
+    }
+
+    // Room Statistics - Real-time occupancy based on RoomOccupancy table
+    @Override
+    public com.hotel.dtos.RoomStatsDTO getRoomStats(Long hotelId, String ownerEmail) {
+        getOwnerHotelDetails(hotelId, ownerEmail); // Verify ownership
+
+        // Total rooms in hotel (active rooms only)
+        Long totalRooms = roomRepository.countByHotelId(hotelId);
+
+        // Rooms in maintenance
+        Long maintenanceRooms = roomRepository.countByHotelIdAndStatus(hotelId, "MAINTENANCE");
+
+        // Occupied rooms for today (based on actual bookings from RoomOccupancy table)
+        java.time.LocalDate today = java.time.LocalDate.now();
+        Long occupiedRooms = roomOccupancyRepository.countOccupiedRoomsByHotel(
+                hotelId, today, today.plusDays(1));
+
+        // Available = Total - Occupied - Maintenance
+        Long availableRooms = totalRooms - occupiedRooms - maintenanceRooms;
+        if (availableRooms < 0)
+            availableRooms = 0L;
+
+        return new com.hotel.dtos.RoomStatsDTO(totalRooms, availableRooms, occupiedRooms, maintenanceRooms);
     }
 
     @Override

@@ -68,6 +68,13 @@ const HotelDetails = () => {
     };
 
     const toggleFavorite = () => {
+        // Check authentication before allowing favorites
+        if (!isAuthenticated) {
+            toast.error('Please login to add favorites');
+            navigate('/login', { state: { from: `/hotel/${id}` } });
+            return;
+        }
+
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         const hotelData = {
             id: hotel.id,
@@ -96,6 +103,12 @@ const HotelDetails = () => {
         if (!isAuthenticated) {
             toast.error('Please login to book');
             navigate('/login');
+            return;
+        }
+
+        // Check if rooms are available
+        if (!roomType.totalRooms || roomType.totalRooms === 0) {
+            toast.error('No rooms available for this room type');
             return;
         }
 
@@ -274,7 +287,7 @@ const HotelDetails = () => {
                                                             </p>
                                                         </div>
                                                         <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{room.description}</p>
-                                                        
+
                                                         <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
                                                             <div className="flex items-center gap-1">
                                                                 <FaStar className="text-yellow-400" />
@@ -287,7 +300,7 @@ const HotelDetails = () => {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        
+
                                                         <div className="flex flex-wrap gap-2">
                                                             {room.amenities.map((amenity, i) => (
                                                                 <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
@@ -297,7 +310,7 @@ const HotelDetails = () => {
                                                         </div>
                                                     </div>
                                                     <div className="mt-6 flex justify-end">
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleAddToCart(room)}
                                                             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg"
                                                         >
@@ -321,7 +334,7 @@ const HotelDetails = () => {
                     <div className="lg:col-span-1">
                         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg sticky top-24">
                             <div className="mb-6">
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Starting from</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Price per night</p>
                                 <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                                     ₹{rooms.length > 0 ? Math.min(...rooms.map(r => r.pricePerNight)).toLocaleString() : '5,000'}
                                 </p>

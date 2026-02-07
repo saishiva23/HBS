@@ -4,17 +4,29 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using InvoiceService.Models;
 
+using InvoiceService.Services;
+
 namespace InvoiceService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class InvoiceController : ControllerBase
     {
+        private readonly IEmailService _emailService;
+
+        public InvoiceController(IEmailService emailService)
+        {
+            _emailService = emailService;
+        }
         [HttpPost("generate")]
-        public IActionResult GenerateInvoice([FromBody] InvoiceRequest request)
+        public async Task<IActionResult> GenerateInvoice([FromBody] InvoiceRequest request)
         {
             try
             {
+                Console.WriteLine($"[DEBUG] Received Invoice Request for Ref: {request.BookingReference}");
+                Console.WriteLine($"[DEBUG] GuestEmail: '{request.GuestEmail}'");
+                Console.WriteLine($"[DEBUG] GuestName: '{request.GuestName}'");
+
                 QuestPDF.Settings.License = LicenseType.Community;
 
                 var document = Document.Create(container =>
@@ -116,6 +128,12 @@ namespace InvoiceService.Controllers
                 });
 
                 var pdf = document.GeneratePdf();
+
+                if (!string.IsNullOrEmpty(request.GuestEmail))
+                {
+                    await _emailService.SendInvoiceEmailAsync(request.GuestEmail, request.GuestName, pdf, request.BookingReference);
+                }
+
                 return File(pdf, "application/pdf", $"Invoice_{request.BookingReference}.pdf");
             }
             catch (Exception ex)
