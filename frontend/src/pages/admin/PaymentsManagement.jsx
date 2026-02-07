@@ -99,10 +99,6 @@ const PaymentsManagement = () => {
                                 Track your earnings, payouts, and transaction history
                             </p>
                         </div>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-95">
-                            <FaFileDownload className="h-5 w-5" />
-                            Download Report
-                        </button>
                     </div>
 
                     {/* Stats Grid */}
