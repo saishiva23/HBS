@@ -33,10 +33,10 @@ public class RecentlyViewedController {
     @PostMapping("/hotel/{hotelId}")
     @Operation(summary = "Track hotel view", description = "Records that the authenticated user has viewed a specific hotel")
     @ApiResponse(responseCode = "200", description = "View recorded successfully")
-    public ResponseEntity<?> addRecentlyViewed(
+    public ResponseEntity<com.hotel.dtos.ApiResponse> addRecentlyViewed(
             @Parameter(description = "Hotel ID") @PathVariable Long hotelId, Principal principal) {
         recentlyViewedService.addRecentlyViewed(hotelId, principal.getName());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new com.hotel.dtos.ApiResponse("Success", "Hotel added to recently viewed"));
     }
 
     @GetMapping

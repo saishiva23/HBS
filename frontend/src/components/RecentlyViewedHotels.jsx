@@ -123,11 +123,8 @@ const RecentlyViewedHotels = () => {
       setRecentHotels(mappedHotels.slice(0, 10));
     } catch (error) {
       console.error('Error loading recently viewed hotels:', error);
-      // Fallback to localStorage
-      const viewedIds = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-      const { mockHotels } = await import('../data/mockData');
-      const viewedHotels = viewedIds.map(id => mockHotels.find(h => h.id === id)).filter(Boolean);
-      setRecentHotels(viewedHotels.slice(0, 10));
+      // No fallback - show nothing if API fails
+      setRecentHotels([]);
     }
   };
 
@@ -191,12 +188,6 @@ export const addToRecentlyViewed = async (hotelId) => {
     window.dispatchEvent(new Event("hotelViewed"));
   } catch (error) {
     console.error('Error adding to recently viewed:', error);
-    // Fallback to localStorage if API fails
-    const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-    const filtered = viewed.filter(id => id !== hotelId);
-    filtered.unshift(hotelId);
-    localStorage.setItem('recentlyViewed', JSON.stringify(filtered.slice(0, 10)));
-    window.dispatchEvent(new Event("hotelViewed"));
   }
 };
 

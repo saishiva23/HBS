@@ -23,6 +23,9 @@ public interface AdminService {
 
     void deleteHotel(Long hotelId);
 
+    // Booking Management
+    List<BookingResponseDTO> getAllBookings();
+
     // Payment Management
     List<BookingResponseDTO> getAllPayments();
 
@@ -40,6 +43,16 @@ public interface AdminService {
     ApiResponse suspendUser(Long userId, String reason);
 
     ApiResponse activateUser(Long userId);
+
+    // Review Management
+    List<com.hotel.entities.Review> getAllReviews();
+
+    void deleteReview(Long reviewId);
+
+    // Complaint Management
+    List<com.hotel.entities.Complaint> getAllComplaints();
+
+    List<com.hotel.dtos.ComplaintResponseDTO> getAllComplaintsDTO();
 
     // Analytics
     com.hotel.dtos.AdminAnalyticsDTO getAnalytics();

@@ -20,6 +20,11 @@ public class BookingResponseDTO {
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
     private BigDecimal totalPrice;
+    
+    // Frozen pricing fields
+    private BigDecimal pricePerNight;
+    private Integer nights;
+    private BigDecimal baseAmount;
     private String status;
     private Integer adults;
     private Integer children;

@@ -1,5 +1,3 @@
-import { mockHotels } from "../data/mockData";
-
 export const calculateNights = (checkIn, checkOut) => {
   if (!checkIn || !checkOut || checkIn === "Not selected" || checkOut === "Not selected") {
     return 1;

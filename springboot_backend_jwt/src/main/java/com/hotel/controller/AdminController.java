@@ -137,6 +137,42 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAnalytics());
     }
 
+    // Booking Management
+    @GetMapping("/bookings")
+    @Operation(summary = "Get all bookings", description = "Retrieves all bookings in the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bookings retrieved successfully")
+    public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
+        log.info("Getting all bookings");
+        return ResponseEntity.ok(adminService.getAllBookings());
+    }
+
+    // Review Management
+    @GetMapping("/reviews")
+    @Operation(summary = "Get all reviews", description = "Retrieves all reviews in the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Reviews retrieved successfully")
+    public ResponseEntity<List<com.hotel.entities.Review>> getAllReviews() {
+        log.info("Getting all reviews");
+        return ResponseEntity.ok(adminService.getAllReviews());
+    }
+
+    @DeleteMapping("/reviews/{id}")
+    @Operation(summary = "Delete review", description = "Deletes a review from the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Review deleted successfully")
+    public ResponseEntity<ApiResponse> deleteReview(@PathVariable Long id) {
+        log.info("Deleting review ID: {}", id);
+        adminService.deleteReview(id);
+        return ResponseEntity.ok(new ApiResponse("Success", "Review deleted successfully"));
+    }
+
+    // Complaint Management
+    @GetMapping("/complaints")
+    @Operation(summary = "Get all complaints", description = "Retrieves all complaints in the system")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Complaints retrieved successfully")
+    public ResponseEntity<List<com.hotel.dtos.ComplaintResponseDTO>> getAllComplaints() {
+        log.info("Getting all complaints");
+        return ResponseEntity.ok(adminService.getAllComplaintsDTO());
+    }
+
     // Recent Activity
     @GetMapping("/users/recent")
     public ResponseEntity<List<User>> getRecentCustomers() {

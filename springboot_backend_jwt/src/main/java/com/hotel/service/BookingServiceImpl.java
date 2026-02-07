@@ -277,6 +277,12 @@ public class BookingServiceImpl implements BookingService {
         dto.setCheckInDate(booking.getCheckInDate());
         dto.setCheckOutDate(booking.getCheckOutDate());
         dto.setTotalPrice(booking.getTotalPrice());
+        
+        // Set frozen pricing fields
+        dto.setPricePerNight(booking.getPricePerNight());
+        dto.setNights(booking.getNights());
+        dto.setBaseAmount(booking.getBaseAmount());
+        
         dto.setStatus(booking.getStatus());
         dto.setAdults(booking.getAdults());
         dto.setChildren(booking.getChildren());

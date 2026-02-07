@@ -41,21 +41,24 @@ public class ComplaintServiceImpl implements ComplaintService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Booking booking = bookingRepository.findById(dto.getBookingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
-
-        // Verify booking belongs to user
-        if (!booking.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Booking does not belong to this user");
-        }
-
-        Hotel hotel = hotelRepository.findById(booking.getHotel().getId())
+        Hotel hotel = hotelRepository.findById(dto.getHotelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found"));
+
+        Booking booking = null;
+        if (dto.getBookingId() != null) {
+            booking = bookingRepository.findById(dto.getBookingId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+            // Verify booking belongs to user
+            if (!booking.getUser().getId().equals(user.getId())) {
+                throw new IllegalArgumentException("Booking does not belong to this user");
+            }
+        }
 
         Complaint complaint = new Complaint();
         complaint.setUser(user);
         complaint.setHotel(hotel);
-        complaint.setBooking(booking);
+        complaint.setBooking(booking); // Can be null for general complaints
         complaint.setSubject(dto.getSubject());
         complaint.setDescription(dto.getDescription());
         complaint.setStatus(ComplaintStatus.PENDING);
