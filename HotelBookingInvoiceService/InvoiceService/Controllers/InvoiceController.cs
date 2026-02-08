@@ -3,7 +3,6 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using InvoiceService.Models;
-
 using InvoiceService.Services;
 
 namespace InvoiceService.Controllers
