@@ -42,8 +42,13 @@ public class SecurityConfiguration {
                         .requestMatchers("/", "/error", "/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api/users/signin",
-                                "/api/users/signup", "/api/users/generate-hash", "/api/users/debug-password",
-                                "/api/users/fix-passwords")
+                                "/api/users/signup",
+                                "/api/users/generate-hash",
+                                "/api/users/debug-password",
+                                "/api/users/fix-passwords",
+                                "/api/users/forgot-password",
+                                "/api/users/validate-reset-token",
+                                "/api/users/reset-password-with-token")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/availability/**").permitAll()

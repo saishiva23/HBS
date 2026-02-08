@@ -111,4 +111,50 @@ public class AvailabilityController {
                         return ResponseEntity.ok(new java.util.HashMap<>());
                 }
         }
+
+        @GetMapping("/hotel/{hotelId}/room-type/{roomTypeId}/batch-detailed")
+        @Operation(summary = "Check detailed batch availability", description = "Returns available room counts for each day in a date range")
+        @ApiResponse(responseCode = "200", description = "Detailed batch availability data retrieved")
+        public ResponseEntity<Map<String, AvailabilityDTO>> checkBatchDetailedAvailability(
+                        @Parameter(description = "Hotel ID") @PathVariable Long hotelId,
+                        @Parameter(description = "Room Type ID") @PathVariable Long roomTypeId,
+                        @Parameter(description = "Start date", example = "2024-12-01") @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate startDate,
+                        @Parameter(description = "End date", example = "2024-12-31") @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate endDate,
+                        @Parameter(description = "Number of rooms", example = "1") @RequestParam(defaultValue = "1") Integer rooms) {
+
+                log.info("Checking detailed batch availability for hotel {} room type {} from {} to {}",
+                                hotelId, roomTypeId, startDate, endDate);
+
+                Map<String, AvailabilityDTO> availability = new java.util.HashMap<>();
+
+                try {
+                        LocalDate current = startDate;
+                        while (!current.isAfter(endDate)) {
+                                LocalDate nextDay = current.plusDays(1);
+
+                                // Get detailed availability info
+                                boolean available = roomOccupancyService.isRoomTypeAvailable(
+                                                hotelId, roomTypeId, current, nextDay, rooms);
+
+                                Long totalRooms = roomRepository.countAvailableRooms(hotelId, roomTypeId);
+                                Long occupiedRooms = roomOccupancyRepository.countOccupiedRoomsByType(
+                                                hotelId, roomTypeId, current, nextDay);
+                                Long availableRoomsCount = totalRooms - occupiedRooms;
+
+                                AvailabilityDTO dayAvailability = new AvailabilityDTO(
+                                                available,
+                                                availableRoomsCount,
+                                                totalRooms);
+
+                                availability.put(current.toString(), dayAvailability);
+                                current = current.plusDays(1);
+                        }
+
+                        log.info("Detailed batch availability check completed for {} dates", availability.size());
+                        return ResponseEntity.ok(availability);
+                } catch (Exception e) {
+                        log.error("Error checking detailed batch availability", e);
+                        return ResponseEntity.ok(new java.util.HashMap<>());
+                }
+        }
 }

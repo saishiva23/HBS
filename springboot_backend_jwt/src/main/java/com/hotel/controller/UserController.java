@@ -252,4 +252,68 @@ public class UserController {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
+
+    // ==================== Password Reset Endpoints ====================
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request password reset", description = "Sends a password reset email to the user if the email exists. Always returns success for security reasons.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reset email sent if account exists"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    public ResponseEntity<?> forgotPassword(@org.springframework.web.bind.annotation.RequestParam String email) {
+        log.info("Password reset requested for email: {}", email);
+        try {
+            userService.requestPasswordReset(email);
+            return ResponseEntity.ok(new com.hotel.dtos.ApiResponse("Success",
+                    "If an account with that email exists, a password reset link has been sent"));
+        } catch (Exception e) {
+            log.error("Error processing password reset request", e);
+            // Still return success message for security (don't reveal if email exists)
+            return ResponseEntity.ok(new com.hotel.dtos.ApiResponse("Success",
+                    "If an account with that email exists, a password reset link has been sent"));
+        }
+    }
+
+    @GetMapping("/validate-reset-token")
+    @Operation(summary = "Validate password reset token", description = "Checks if a password reset token is valid and not expired")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token validation result"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    public ResponseEntity<?> validateResetToken(@org.springframework.web.bind.annotation.RequestParam String token) {
+        log.info("Validating reset token");
+        try {
+            boolean isValid = userService.validateResetToken(token);
+            if (isValid) {
+                return ResponseEntity.ok(new com.hotel.dtos.ApiResponse("Success", "Token is valid"));
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(new com.hotel.dtos.ApiResponse("Error", "Invalid or expired token"));
+            }
+        } catch (Exception e) {
+            log.error("Error validating reset token", e);
+            return ResponseEntity.badRequest()
+                    .body(new com.hotel.dtos.ApiResponse("Error", "Invalid or expired token"));
+        }
+    }
+
+    @PostMapping("/reset-password-with-token")
+    @Operation(summary = "Reset password with token", description = "Resets user password using a valid reset token")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password reset successful"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    public ResponseEntity<?> resetPasswordWithToken(
+            @org.springframework.web.bind.annotation.RequestParam String token,
+            @org.springframework.web.bind.annotation.RequestParam String newPassword) {
+        log.info("Resetting password with token");
+        try {
+            userService.resetPasswordWithToken(token, newPassword);
+            return ResponseEntity.ok(new com.hotel.dtos.ApiResponse("Success", "Password reset successful"));
+        } catch (Exception e) {
+            log.error("Error resetting password with token", e);
+            return ResponseEntity.badRequest().body(new com.hotel.dtos.ApiResponse("Error", e.getMessage()));
+        }
+    }
 }

@@ -3,6 +3,8 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import { Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Footer from './components/Footer';
 import RegisterPage from './pages/RegisterPage';
 import Favorites from './pages/Favorites';
@@ -49,50 +51,52 @@ function App() {
       <HotelProvider>
         <ReviewsProvider>
           <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              {/* User Pages */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/recent" element={<RecentlyViewed />} />
-              <Route path="/bookings" element={<Bookings />} />
-              <Route path="/complaints" element={<Complaints />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/hoteliers" element={<Hoteliers />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/hotel/:id" element={<HotelDetails />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/checkout" element={<Checkout />} />
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                {/* User Pages */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/recent" element={<RecentlyViewed />} />
+                <Route path="/bookings" element={<Bookings />} />
+                <Route path="/complaints" element={<Complaints />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/hoteliers" element={<Hoteliers />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/hotel/:id" element={<HotelDetails />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/checkout" element={<Checkout />} />
 
-              {/* Owner Pages (Hotel Owners) */}
-              <Route path="/owner/dashboard" element={<HotelierDashboard />} />
-              <Route path="/owner/hotel-profile" element={<HotelProfileManagement />} />
-              <Route path="/owner/rooms" element={<RoomManagement />} />
-              <Route path="/owner/bookings" element={<BookingManagement />} />
-              <Route path="/owner/experience" element={<CustomerExperience />} />
-              <Route path="/owner/payments" element={<PaymentsManagement />} />
-              <Route path="/owner/settings" element={<HotelierSettings />} />
-              <Route path="/owner/my-hotels" element={<HotelOwnerCRUD />} />
-              <Route path="/owner/room-types" element={<RoomTypeManagement />} />
-              <Route path="/owner/pending-approval" element={<PendingApproval />} />
-              <Route path="/owner/no-hotels" element={<NoHotels />} />
+                {/* Owner Pages (Hotel Owners) */}
+                <Route path="/owner/dashboard" element={<HotelierDashboard />} />
+                <Route path="/owner/hotel-profile" element={<HotelProfileManagement />} />
+                <Route path="/owner/rooms" element={<RoomManagement />} />
+                <Route path="/owner/bookings" element={<BookingManagement />} />
+                <Route path="/owner/experience" element={<CustomerExperience />} />
+                <Route path="/owner/payments" element={<PaymentsManagement />} />
+                <Route path="/owner/settings" element={<HotelierSettings />} />
+                <Route path="/owner/my-hotels" element={<HotelOwnerCRUD />} />
+                <Route path="/owner/room-types" element={<RoomTypeManagement />} />
+                <Route path="/owner/pending-approval" element={<PendingApproval />} />
+                <Route path="/owner/no-hotels" element={<NoHotels />} />
 
-              {/* Admin Pages (Site Admins) */}
-              <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
-              <Route path="/admin/approvals" element={<HotelApprovals />} />
-              <Route path="/admin/customers" element={<CustomerManagement />} />
-              <Route path="/admin/hotels" element={<HotelApprovals />} />
-              <Route path="/admin/locations" element={<LocationManagement />} />
-              <Route path="/admin/locations" element={<LocationManagement />} />
-              <Route path="/admin/analytics" element={<SystemAnalytics />} />
-              <Route path="/admin/logs" element={<AdminLogs />} />
-            </Routes>
-          </main>
-          <Footer />
+                {/* Admin Pages (Site Admins) */}
+                <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
+                <Route path="/admin/approvals" element={<HotelApprovals />} />
+                <Route path="/admin/customers" element={<CustomerManagement />} />
+                <Route path="/admin/hotels" element={<HotelApprovals />} />
+                <Route path="/admin/locations" element={<LocationManagement />} />
+                <Route path="/admin/locations" element={<LocationManagement />} />
+                <Route path="/admin/analytics" element={<SystemAnalytics />} />
+                <Route path="/admin/logs" element={<AdminLogs />} />
+              </Routes>
+            </main>
+            <Footer />
           </div>
         </ReviewsProvider>
       </HotelProvider>

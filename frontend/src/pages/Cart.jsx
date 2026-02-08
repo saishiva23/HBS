@@ -25,6 +25,7 @@ const Cart = () => {
   });
   const [editingIndex, setEditingIndex] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [dateAvailability, setDateAvailability] = useState({});
 
   // Proceed to checkout - Create actual booking
   const handleCheckout = async () => {
@@ -72,20 +73,50 @@ const Cart = () => {
   };
 
   // Start editing an item
-  const startEdit = (index) => {
+  const startEdit = async (index) => {
+    const item = cartItems[index];
     setEditingIndex(index);
     setEditForm({
-      guests: cartItems[index].guests || 2,
-      rooms: cartItems[index].rooms || 1,
-      checkIn: cartItems[index].checkIn || "",
-      checkOut: cartItems[index].checkOut || ""
+      guests: item.guests || 2,
+      rooms: item.rooms || 1,
+      checkIn: item.checkIn || "",
+      checkOut: item.checkOut || ""
     });
+
+    // Fetch occupied dates for the next 3 months
+    if (item.hotelId && item.roomTypeId) {
+      try {
+        const today = new Date();
+        const threeMonthsLater = new Date();
+        threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+
+        const startDate = today.toISOString().split('T')[0];
+        const endDate = threeMonthsLater.toISOString().split('T')[0];
+
+        // Fetch detailed availability with room counts
+        const availability = await customerAPI.availability.checkBatchDetailedAvailability(
+          item.hotelId,
+          item.roomTypeId,
+          startDate,
+          endDate,
+          item.rooms || 1
+        );
+
+        console.log('Availability data received:', availability);
+        console.log('Number of dates:', Object.keys(availability).length);
+        setDateAvailability(availability);
+      } catch (error) {
+        console.error('Error fetching availability:', error);
+        setDateAvailability({});
+      }
+    }
   };
 
   // Cancel editing
   const cancelEdit = () => {
     setEditingIndex(null);
     setEditForm({});
+    setDateAvailability({});
   };
 
   // Save edited item
@@ -112,6 +143,7 @@ const Cart = () => {
     localStorage.setItem("hotelCart", JSON.stringify(updated));
     window.dispatchEvent(new Event("cartUpdated"));
     setEditingIndex(null);
+    setDateAvailability({});
   };
 
   const updateRooms = (index, delta) => {
@@ -239,7 +271,19 @@ const Cart = () => {
                               <input
                                 type="date"
                                 value={editForm.checkIn}
-                                onChange={(e) => setEditForm({ ...editForm, checkIn: e.target.value })}
+                                min={new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                  const selectedDate = e.target.value;
+                                  // Check if selected date has availability
+                                  const availability = dateAvailability[selectedDate];
+                                  if (availability && availability.availableRoomsCount === 0) {
+                                    showToast('This date is fully booked. Please select another date.', 'warning');
+                                  } else if (availability && availability.availableRoomsCount < (editForm.rooms || 1)) {
+                                    showToast(`Only ${availability.availableRoomsCount} room(s) available on this date. Please reduce room count or select another date.`, 'warning');
+                                  } else {
+                                    setEditForm({ ...editForm, checkIn: selectedDate });
+                                  }
+                                }}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-yellow-400"
                               />
                             </div>
@@ -248,11 +292,79 @@ const Cart = () => {
                               <input
                                 type="date"
                                 value={editForm.checkOut}
-                                onChange={(e) => setEditForm({ ...editForm, checkOut: e.target.value })}
+                                min={editForm.checkIn || new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                  const selectedDate = e.target.value;
+                                  // Check if selected date has availability
+                                  const availability = dateAvailability[selectedDate];
+                                  if (availability && availability.availableRoomsCount === 0) {
+                                    showToast('This date is fully booked. Please select another date.', 'warning');
+                                  } else if (availability && availability.availableRoomsCount < (editForm.rooms || 1)) {
+                                    showToast(`Only ${availability.availableRoomsCount} room(s) available on this date. Please reduce room count or select another date.`, 'warning');
+                                  } else {
+                                    setEditForm({ ...editForm, checkOut: selectedDate });
+                                  }
+                                }}
                                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-yellow-400"
                               />
                             </div>
                           </div>
+
+
+                          {/* Display Room Availability */}
+                          {Object.keys(dateAvailability).length > 0 && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                              <div className="flex items-start gap-2">
+                                <span className="text-blue-600 dark:text-blue-400 text-lg">📅</span>
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                                    Room Availability (Next 3 Months)
+                                  </p>
+                                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                                    {Object.entries(dateAvailability)
+                                      .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+                                      .map(([date, availability]) => {
+                                        const available = availability.availableRoomsCount;
+                                        const total = availability.totalRoomsCount;
+                                        const isFullyBooked = available === 0;
+                                        const isPartiallyAvailable = available > 0 && available < total;
+
+                                        return (
+                                          <div
+                                            key={date}
+                                            className={`flex items-center justify-between px-2 py-1 rounded text-xs ${isFullyBooked
+                                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                                              : isPartiallyAvailable
+                                                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                                                : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                                              }`}
+                                          >
+                                            <span className="font-medium">
+                                              {new Date(date).toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                weekday: 'short'
+                                              })}
+                                            </span>
+                                            <span className="font-bold">
+                                              {isFullyBooked ? (
+                                                '🔴 Fully Booked'
+                                              ) : (
+                                                `${available}/${total} available`
+                                              )}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                                    🟢 All available • 🟡 Limited rooms • 🔴 Fully booked
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Guests</label>
@@ -371,8 +483,8 @@ const Cart = () => {
                   onClick={handleCheckout}
                   disabled={cartItems.length === 0 || cartItems.some(item => !item.checkIn || !item.checkOut || item.checkIn === 'Not selected' || item.checkOut === 'Not selected')}
                   className={`w-full py-3 rounded-lg font-semibold mb-4 transition-colors ${cartItems.length === 0 || cartItems.some(item => !item.checkIn || !item.checkOut || item.checkIn === 'Not selected' || item.checkOut === 'Not selected')
-                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                      : 'bg-yellow-500 text-gray-900 hover:bg-yellow-400'
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-yellow-500 text-gray-900 hover:bg-yellow-400'
                     }`}
                 >
                   Proceed to Checkout

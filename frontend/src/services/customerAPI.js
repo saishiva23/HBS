@@ -157,6 +157,12 @@ export const availability = {
     api.get(`/availability/hotel/${hotelId}/room-type/${roomTypeId}/batch`, {
       params: { startDate, endDate, rooms }
     }),
+
+  // Check detailed availability with room counts for calendar
+  checkBatchDetailedAvailability: (hotelId, roomTypeId, startDate, endDate, rooms = 1) =>
+    api.get(`/availability/hotel/${hotelId}/room-type/${roomTypeId}/batch-detailed`, {
+      params: { startDate, endDate, rooms }
+    }),
 };
 
 // ============ FRONTEND PAGE INTEGRATIONS ============

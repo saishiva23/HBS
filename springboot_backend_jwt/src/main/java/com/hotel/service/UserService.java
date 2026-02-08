@@ -28,4 +28,11 @@ public interface UserService {
     ApiResponse encryptPasswords();
 
     void resetPassword(String email, String newPassword);
+
+    // Password reset with token methods
+    void requestPasswordReset(String email);
+
+    boolean validateResetToken(String token);
+
+    void resetPasswordWithToken(String token, String newPassword);
 }
