@@ -102,6 +102,8 @@ const Cart = () => {
           item.rooms || 1
         );
 
+        console.log('Availability data received:', availability);
+        console.log('Number of dates:', Object.keys(availability).length);
         setDateAvailability(availability);
       } catch (error) {
         console.error('Error fetching availability:', error);
@@ -319,39 +321,41 @@ const Cart = () => {
                                     Room Availability (Next 3 Months)
                                   </p>
                                   <div className="space-y-1 max-h-48 overflow-y-auto">
-                                    {Object.entries(dateAvailability).slice(0, 30).map(([date, availability]) => {
-                                      const available = availability.availableRoomsCount;
-                                      const total = availability.totalRoomsCount;
-                                      const isFullyBooked = available === 0;
-                                      const isPartiallyAvailable = available > 0 && available < total;
+                                    {Object.entries(dateAvailability)
+                                      .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+                                      .map(([date, availability]) => {
+                                        const available = availability.availableRoomsCount;
+                                        const total = availability.totalRoomsCount;
+                                        const isFullyBooked = available === 0;
+                                        const isPartiallyAvailable = available > 0 && available < total;
 
-                                      return (
-                                        <div
-                                          key={date}
-                                          className={`flex items-center justify-between px-2 py-1 rounded text-xs ${isFullyBooked
-                                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                                            : isPartiallyAvailable
-                                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-                                              : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                                            }`}
-                                        >
-                                          <span className="font-medium">
-                                            {new Date(date).toLocaleDateString('en-US', {
-                                              month: 'short',
-                                              day: 'numeric',
-                                              weekday: 'short'
-                                            })}
-                                          </span>
-                                          <span className="font-bold">
-                                            {isFullyBooked ? (
-                                              '🔴 Fully Booked'
-                                            ) : (
-                                              `${available}/${total} available`
-                                            )}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
+                                        return (
+                                          <div
+                                            key={date}
+                                            className={`flex items-center justify-between px-2 py-1 rounded text-xs ${isFullyBooked
+                                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                                              : isPartiallyAvailable
+                                                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                                                : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                                              }`}
+                                          >
+                                            <span className="font-medium">
+                                              {new Date(date).toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                weekday: 'short'
+                                              })}
+                                            </span>
+                                            <span className="font-bold">
+                                              {isFullyBooked ? (
+                                                '🔴 Fully Booked'
+                                              ) : (
+                                                `${available}/${total} available`
+                                              )}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
                                   </div>
                                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                                     🟢 All available • 🟡 Limited rooms • 🔴 Fully booked
