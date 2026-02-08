@@ -57,5 +57,36 @@ namespace InvoiceService.Services
                 // We do not throw here to allow the controller to still return the PDF to the user
             }
         }
+
+        public async Task SendGenericEmailAsync(string toEmail, string subject, string htmlBody)
+        {
+            try
+            {
+                var email = new MimeMessage();
+                email.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
+                email.To.Add(new MailboxAddress("", toEmail));
+                email.Subject = subject;
+
+                var bodyBuilder = new BodyBuilder
+                {
+                    HtmlBody = htmlBody
+                };
+
+                email.Body = bodyBuilder.ToMessageBody();
+
+                using var smtp = new SmtpClient();
+                await smtp.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_emailSettings.Username, _emailSettings.Password);
+                await smtp.SendAsync(email);
+                await smtp.DisconnectAsync(true);
+
+                _logger.LogInformation($"Generic email sent successfully to {toEmail}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to send generic email to {toEmail}");
+                throw; // Throw to let caller handle the error
+            }
+        }
     }
 }
