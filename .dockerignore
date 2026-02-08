@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Documentation
+*.md
+docs/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts (will be built inside Docker)
+target/
+dist/
+build/
+node_modules/
+.next/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment files (will be provided at runtime)
+.env
+.env.*
+!.env.example
+
+# Database
+*.sql
+db/
+
+# Batch files
+*.bat
+*.ps1
+
+# Backup files
+*.bak
+*.backup
