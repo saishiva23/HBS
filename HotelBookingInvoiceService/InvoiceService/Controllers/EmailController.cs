@@ -17,6 +17,31 @@ namespace InvoiceService.Controllers
         }
 
         /// <summary>
+        /// Send generic email (e.g., password reset, notifications)
+        /// </summary>
+        [HttpPost("send")]
+        public async Task<IActionResult> SendEmail([FromBody] Models.EmailRequest request)
+        {
+            try
+            {
+                _logger.LogInformation($"Sending generic email to {request.To} with subject: {request.Subject}");
+
+                await _emailService.SendGenericEmailAsync(
+                    request.To,
+                    request.Subject,
+                    request.HtmlBody
+                );
+
+                return Ok(new { message = "Email sent successfully", recipient = request.To });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send generic email");
+                return StatusCode(500, new { error = "Failed to send email", details = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Send invoice email with PDF attachment
         /// </summary>
         [HttpPost("send-invoice")]
